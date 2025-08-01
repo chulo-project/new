@@ -153,7 +153,7 @@ const Home: React.FC = () => {
             </div>
 
             {/* Search Buttons Container */}
-            <div className="mt-6 space-y-4">
+            <div className="mt-6 ">
               {/* Mobile Advanced Search Button */}
               {isMobile && (
                 <div className="flex justify-center">
@@ -169,11 +169,13 @@ const Home: React.FC = () => {
               
               {/* Search Buttons */}
               <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                <div className="hidden sm:block">
                 <SearchButton
                   onClick={() => handleSearch('')}
                   icon={Search}
                   text="Search Recipes"
                 />
+                </div>
                 <SearchButton
                   onClick={handleLuckySearch}
                   icon={Shuffle}

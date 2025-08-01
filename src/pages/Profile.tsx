@@ -402,10 +402,10 @@ const Profile: React.FC = () => {
                 </div>
               ) : (
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-2 text-center lg:text-left">
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-4 text-center lg:text-left">
                     {user.name}
                   </h1>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-1 sm:space-y-0 text-gray-600 dark:text-gray-400 mb-4 text-center lg:text-left">
+                  <div className="flex flex-col items-center lg:items-start space-y-2 text-gray-600 dark:text-gray-400 mb-6 text-center lg:text-left">
                     <div className="flex items-center space-x-1">
                       <Mail className="w-4 h-4" />
                       <span>{user.email}</span>

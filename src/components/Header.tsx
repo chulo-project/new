@@ -13,6 +13,9 @@ const Header: React.FC<HeaderProps> = ({ onSearchClick }) => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
+  const isProfilePage = window.location.pathname === '/profile';
+  const isHomePage = window.location.pathname === '/';
+
   const handleProfileClick = () => {
     window.location.href = '/profile';
   };
@@ -22,16 +25,30 @@ const Header: React.FC<HeaderProps> = ({ onSearchClick }) => {
   };
 
   const handleHomeClick = () => {
-    window.location.href = '/';
+    if (!isHomePage) {
+      window.location.href = '/';
+    }
   };
 
+  // Close dropdowns when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = () => {
+      setShowUserMenu(false);
+      setShowMobileMenu(false);
+    };
+
+    if (showUserMenu || showMobileMenu) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showUserMenu, showMobileMenu]);
   return (
     <header className="bg-white dark:bg-gray-900 shadow-sm border-b dark:border-gray-800 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div 
-            className="flex items-center space-x-2 cursor-pointer"
+            className={`flex items-center space-x-2 ${!isHomePage ? 'cursor-pointer' : 'cursor-default'}`}
             onClick={handleHomeClick}
           >
             <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
@@ -58,7 +75,10 @@ const Header: React.FC<HeaderProps> = ({ onSearchClick }) => {
             {user ? (
               <div className="relative">
                 <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowUserMenu(!showUserMenu);
+                  }}
                   className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
                   {user.profilePicture ? (
@@ -78,18 +98,23 @@ const Header: React.FC<HeaderProps> = ({ onSearchClick }) => {
                 </button>
 
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700 py-2">
-                    <button
+                  <div 
+                    className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700 py-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {!isProfilePage && (
+                      <button
                       onClick={() => {
                         setShowUserMenu(false);
                         handleProfileClick();
                       }}
                       className="w-full flex items-center space-x-2 px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
-                    >
+                      >
                       <User className="w-4 h-4" />
                       <span>Profile</span>
-                    </button>
-                    <hr className="my-2 border-gray-200 dark:border-gray-600" />
+                      </button>
+                    )}
+                    {!isProfilePage && <hr className="my-2 border-gray-200 dark:border-gray-600" />}
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
@@ -116,7 +141,10 @@ const Header: React.FC<HeaderProps> = ({ onSearchClick }) => {
           {/* Mobile menu button */}
           <div className="md:hidden">
             <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMobileMenu(!showMobileMenu);
+              }}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               {showMobileMenu ? (
@@ -130,10 +158,16 @@ const Header: React.FC<HeaderProps> = ({ onSearchClick }) => {
 
         {/* Mobile Navigation */}
         {showMobileMenu && (
-          <div className="md:hidden border-t dark:border-gray-800 py-4">
+          <div 
+            className="md:hidden border-t dark:border-gray-800 py-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="space-y-2">
               <button
-                onClick={toggleTheme}
+                onClick={() => {
+                  toggleTheme();
+                  setShowMobileMenu(false);
+                }}
                 className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 {theme === 'light' ? (
@@ -148,16 +182,18 @@ const Header: React.FC<HeaderProps> = ({ onSearchClick }) => {
 
               {user ? (
                 <>
-                  <button
+                  {!isProfilePage && (
+                    <button
                     onClick={() => {
                       setShowMobileMenu(false);
                       handleProfileClick();
                     }}
                     className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
-                  >
+                    >
                     <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <span className="text-gray-700 dark:text-gray-300">Profile</span>
-                  </button>
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setShowMobileMenu(false);
