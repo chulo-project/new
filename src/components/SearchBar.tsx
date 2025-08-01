@@ -100,7 +100,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
             onFocus={handleFocus}
-            placeholder={placeholder}
+            placeholder={large ? (window.innerWidth < 640 ? "Search..." : placeholder) : placeholder}
             className={`${baseInputClasses} bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400`}
           />
           {query && (

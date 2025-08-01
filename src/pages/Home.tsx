@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChefHat, TrendingUp, Search, Shuffle, Filter, Camera, Users, BookOpen, MessageSquare, X } from 'lucide-react';
+import { ChefHat, TrendingUp, Search, Shuffle, Filter, Camera, Users, BookOpen, MessageSquare, X, BarChart3 } from 'lucide-react';
 import Header from '../components/Header';
 import SearchBar from '../components/SearchBar';
 import RecipeCard from '../components/RecipeCard';
@@ -23,7 +23,7 @@ const Home: React.FC = () => {
     { icon: ChefHat, value: '4.8/5', label: 'Average Rating', gradientFrom: 'from-yellow-500', gradientTo: 'to-orange-500' }
   ];
 
-  const FORM_FIELDS = [
+  const ADVANCED_SEARCH_FIELDS = [
     {
       label: 'Cuisine Type',
       options: [
@@ -132,7 +132,7 @@ const Home: React.FC = () => {
                 large={true}
                 placeholder="Search by ingredients, recipe name, cuisine..."
               />
-              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 hidden sm:flex items-center space-x-2">
                 <button
                   onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
                   className="p-2 text-gray-400 hover:text-orange-500 transition-colors"
@@ -151,23 +151,44 @@ const Home: React.FC = () => {
             </div>
             
             {/* Search Buttons */}
-            <div className="flex justify-center space-x-4">
-              <SearchButton
-                onClick={() => handleSearch('')}
-                icon={Search}
-                text="Search Recipes"
-              />
-              <SearchButton
-                onClick={handleLuckySearch}
-                icon={Shuffle}
-                text="I'm Feeling Lucky"
-                variant="primary"
-              />
+            <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4">
+              {/* Mobile Advanced Search Button */}
+              <button
+                onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+                className="sm:hidden flex items-center justify-center space-x-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors font-medium"
+              >
+                <Filter className="w-4 h-4" />
+                <span>Advanced Search</span>
+              </button>
+              
+              <div className="flex flex-row justify-center space-x-3 sm:flex-row sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                <SearchButton
+                  onClick={() => handleSearch('')}
+                  icon={Search}
+                  text="Search Recipes"
+                  className="hidden sm:flex"
+                />
+                <SearchButton
+                  onClick={handleLuckySearch}
+                  icon={Shuffle}
+                  text="I'm Feeling Lucky"
+                  variant="primary"
+                  className="flex-1 sm:w-auto"
+                />
+                {/* Mobile Image Search Icon Button */}
+                <button
+                  onClick={handleImageSearch}
+                  className="sm:hidden flex items-center justify-center bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 p-3 rounded-lg transition-colors"
+                  title="Search by Image"
+                >
+                  <Camera className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Advanced Search Panel */}
             {showAdvancedSearch && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 mx-4">
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
                   <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Advanced Search</h3>
@@ -180,7 +201,7 @@ const Home: React.FC = () => {
                   </div>
                   <div className="p-6 overflow-y-auto scrollbar-hide" style={{ maxHeight: '60vh' }}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {FORM_FIELDS.map((field, index) => (
+                      {ADVANCED_SEARCH_FIELDS.map((field, index) => (
                         <FormField
                           key={index}
                           label={field.label}
@@ -198,10 +219,10 @@ const Home: React.FC = () => {
                         placeholder="e.g. 500"
                       />
                     </div>
-                    <div className="mt-8 flex justify-end space-x-3">
+                    <div className="mt-8 flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3">
                       <button
                         onClick={() => setShowAdvancedSearch(false)}
-                        className="px-6 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                        className="w-full sm:w-auto px-6 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
                         Cancel
                       </button>
@@ -210,7 +231,7 @@ const Home: React.FC = () => {
                           setShowAdvancedSearch(false);
                           handleSearch('advanced');
                         }}
-                        className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
+                        className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
                       >
                         Apply Filters
                       </button>
@@ -226,8 +247,11 @@ const Home: React.FC = () => {
       {/* Quick Stats */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Platform Statistics</h2>
+          <div className="mb-12">
+            <div className="flex items-center space-x-3 justify-center mb-4">
+              <BarChart3 className="w-8 h-8 text-orange-500" />
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Platform Statistics</h2>
+            </div>
             <p className="text-gray-600 dark:text-gray-400">Join our growing community of food enthusiasts</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -301,7 +325,9 @@ const Home: React.FC = () => {
       </section>
 
       {/* Call to Action */}
-      <CTASection {...(user ? userCTAData : guestCTAData)} />
+      <div className="bg-gray-100 dark:bg-gray-800/50">
+        <CTASection {...(user ? userCTAData : guestCTAData)} />
+      </div>
       
       <Footer />
     </div>

@@ -6,13 +6,15 @@ interface SearchButtonProps {
   icon: LucideIcon;
   text: string;
   variant?: 'primary' | 'secondary';
+  className?: string;
 }
 
 const SearchButton: React.FC<SearchButtonProps> = ({ 
   onClick, 
   icon: Icon, 
   text, 
-  variant = 'secondary' 
+  variant = 'secondary',
+  className = ''
 }) => {
   const baseClasses = "flex items-center space-x-2 px-6 py-3 rounded-xl transition-all duration-200 font-medium";
   const variantClasses = variant === 'primary' 
@@ -22,7 +24,7 @@ const SearchButton: React.FC<SearchButtonProps> = ({
   return (
     <button
       onClick={onClick}
-      className={`${baseClasses} ${variantClasses}`}
+      className={`${baseClasses} ${variantClasses} ${className}`}
     >
       <Icon className="w-4 h-4" />
       <span>{text}</span>
