@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChefHat, TrendingUp, Search, Shuffle, Filter, Camera, Users, BookOpen, MessageSquare, X, BarChart3, Star } from 'lucide-react';
 import Header from '../components/Header';
 import SearchBar from '../components/SearchBar';
@@ -14,6 +14,16 @@ import { useAuth } from '../context/AuthContext';
 const Home: React.FC = () => {
   const { user, addToSearchHistory } = useAuth();
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Event handlers
   const handleSearch = (query: string) => {
@@ -119,16 +129,18 @@ const Home: React.FC = () => {
               <SearchBar 
                 onSearch={handleSearch} 
                 large={true}
-                placeholder="Search by ingredients, recipe name, cuisine..."
+                placeholder={isMobile ? "Search..." : "Search by ingredients, recipe name, cuisine..."}
               />
               <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-                <button
-                  onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
-                  className="p-2 text-gray-400 hover:text-orange-500 transition-colors"
-                  title="Advanced Search"
-                >
-                  <Filter className="w-5 h-5" />
-                </button>
+                {!isMobile && (
+                  <button
+                    onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+                    className="p-2 text-gray-400 hover:text-orange-500 transition-colors"
+                    title="Advanced Search"
+                  >
+                    <Filter className="w-5 h-5" />
+                  </button>
+                )}
                 <button
                   onClick={handleImageSearch}
                   className="p-2 text-gray-400 hover:text-orange-500 transition-colors"
@@ -138,6 +150,19 @@ const Home: React.FC = () => {
                 </button>
               </div>
             </div>
+            
+            {/* Mobile Advanced Search Button */}
+            {isMobile && (
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+                  className="flex items-center space-x-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 px-6 py-3 rounded-xl transition-all duration-200 font-medium w-auto"
+                >
+                  <Filter className="w-4 h-4" />
+                  <span>Advanced Search</span>
+                </button>
+              </div>
+            )}
             
             {/* Search Buttons */}
             <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4">
@@ -207,8 +232,8 @@ const Home: React.FC = () => {
       {/* Quick Stats */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-12">
-            <div className="flex items-center space-x-3 justify-center mb-4">
+          <div className="mb-12 text-left">
+            <div className="flex items-center space-x-3 mb-4">
               <BarChart3 className="w-8 h-8 text-orange-500" />
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Platform Statistics</h2>
             </div>
@@ -233,18 +258,20 @@ const Home: React.FC = () => {
       {user && (
         <section className="py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
-            <div className="mb-12">
-              <div className="flex items-center space-x-3 justify-center mb-4">
+            <div className="mb-12 text-center sm:text-left">
+              <div className="flex items-center space-x-3 justify-center sm:justify-start mb-4">
                 <Star className="w-8 h-8 text-orange-500" />
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Featured Recipes</h2>
               </div>
-                <p className="text-gray-600 dark:text-gray-400">Hand-picked recipes just for you</p>
-              <button 
-                onClick={() => window.location.href = '/search'}
-                className="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium flex items-center space-x-1 transition-colors"
-              >
-                <span>View All</span>
-              </button>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-gray-600 dark:text-gray-400 text-center sm:text-left mb-2 sm:mb-0">Hand-picked recipes just for you</p>
+                <button 
+                  onClick={() => window.location.href = '/search'}
+                  className="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium flex items-center space-x-1 transition-colors justify-center sm:justify-start"
+                >
+                  <span>View All</span>
+                </button>
+              </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -263,12 +290,12 @@ const Home: React.FC = () => {
       {/* Popular This Week */}
       <section className="py-4 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-12">
-            <div className="flex items-center space-x-3 justify-center mb-4">
+          <div className="mb-12 text-center sm:text-left">
+            <div className="flex items-center space-x-3 justify-center sm:justify-start mb-4">
               <TrendingUp className="w-8 h-8 text-orange-500" />
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Popular This Week</h2>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-center">Most loved recipes by our community</p>
+            <p className="text-gray-600 dark:text-gray-400 text-center sm:text-left">Most loved recipes by our community</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
