@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChefHat, TrendingUp, Search, Shuffle, Filter, Camera, Users, BookOpen, MessageSquare, X, BarChart3, Star } from 'lucide-react';
+import { ChefHat, TrendingUp, Search, Shuffle, Filter, Camera, Users, BookOpen, MessageSquare, X, BarChart3, Star, User } from 'lucide-react';
 import Header from '../components/Header';
 import SearchBar from '../components/SearchBar';
 import RecipeCard from '../components/RecipeCard';
@@ -50,7 +50,7 @@ const Home: React.FC = () => {
     { icon: Users, value: '25,000+', label: 'Active Users', gradientFrom: 'from-blue-500', gradientTo: 'to-purple-500' },
     { icon: BookOpen, value: '10,000+', label: 'Recipe Collection', gradientFrom: 'from-orange-500', gradientTo: 'to-red-500' },
     { icon: MessageSquare, value: '50,000+', label: 'Recipe Reviews', gradientFrom: 'from-green-500', gradientTo: 'to-emerald-500' },
-    { icon: TrendingUp, value: '1,247', label: 'Visitors Today', gradientFrom: 'from-yellow-500', gradientTo: 'to-orange-500' }
+    { icon: User, value: '1,247', label: 'Visitors Today', gradientFrom: 'from-yellow-500', gradientTo: 'to-orange-500' }
   ];
 
   const ADVANCED_SEARCH_FIELDS = [
