@@ -153,6 +153,27 @@ const Profile: React.FC = () => {
     setResetError('');
   };
 
+  const deleteSearchHistoryItem = (index: number) => {
+    if (user) {
+      const updatedHistory = user.searchHistory.filter((_, i) => i !== index);
+      const updatedUser = {
+        ...user,
+        searchHistory: updatedHistory
+      };
+      updateProfile(updatedUser);
+    }
+  };
+
+  const clearAllSearchHistory = () => {
+    if (user) {
+      const updatedUser = {
+        ...user,
+        searchHistory: []
+      };
+      updateProfile(updatedUser);
+    }
+  };
+
   const handleRecipeClick = (recipeId: string) => {
     window.location.href = `/recipe/${recipeId}`;
   };
@@ -177,13 +198,15 @@ const Profile: React.FC = () => {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Button */}
-        <button
-          onClick={handleBackClick}
-          className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors mb-6"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back to Home</span>
-        </button>
+        <div className="mb-6">
+          <button
+            onClick={handleBackClick}
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Home</span>
+          </button>
+        </div>
 
         {/* Profile Header */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border dark:border-gray-700 p-6 mb-8">
@@ -285,19 +308,21 @@ const Profile: React.FC = () => {
                       <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
-                  >
-                    Edit Profile
-                  </button>
-                  <button
-                    onClick={handleResetPasswordClick}
-                    className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors flex items-center space-x-2"
-                  >
-                    <Key className="w-4 h-4" />
-                    <span>Reset Password</span>
-                  </button>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
+                    >
+                      Edit Profile
+                    </button>
+                    <button
+                      onClick={handleResetPasswordClick}
+                      className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors flex items-center space-x-2"
+                    >
+                      <Key className="w-4 h-4" />
+                      <span>Reset Password</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -437,19 +462,38 @@ const Profile: React.FC = () => {
             {activeTab === 'history' && (
               <div>
                 {user.searchHistory.length > 0 ? (
-                  <div className="space-y-2">
-                    {user.searchHistory.map((query, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer"
-                        onClick={() => window.location.href = `/search?q=${encodeURIComponent(query)}`}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium text-gray-900 dark:text-white">Recent Searches</h4>
+                      <button
+                        onClick={clearAllSearchHistory}
+                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium transition-colors"
                       >
-                        <div className="flex items-center space-x-3">
-                          <History className="w-4 h-4 text-gray-400" />
-                          <span className="text-gray-900 dark:text-white">{query}</span>
+                        Clear All
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {user.searchHistory.map((query, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group"
+                        >
+                          <div 
+                            className="flex items-center space-x-3 flex-1 cursor-pointer"
+                            onClick={() => window.location.href = `/search?q=${encodeURIComponent(query)}`}
+                          >
+                            <History className="w-4 h-4 text-gray-400" />
+                            <span className="text-gray-900 dark:text-white">{query}</span>
+                          </div>
+                          <button
+                            onClick={() => deleteSearchHistoryItem(index)}
+                            className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200 p-1"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-12">

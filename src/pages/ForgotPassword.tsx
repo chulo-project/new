@@ -203,13 +203,15 @@ const ForgotPassword: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Back Button */}
-        <button
-          onClick={handleBackClick}
-          className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back to Login</span>
-        </button>
+        <div>
+          <button
+            onClick={handleBackClick}
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Login</span>
+          </button>
+        </div>
 
         {/* Header */}
         <div className="text-center">

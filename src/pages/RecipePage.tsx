@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Clock, Users, Star, Heart, Bookmark, ChefHat, Send, ThumbsUp, Download, Activity } from 'lucide-react';
+import { ArrowLeft, Clock, Users, Star, Heart, Bookmark, ChefHat, Send, ThumbsUp, Download, Activity, FileText } from 'lucide-react';
 import Header from '../components/Header';
 import RecipeCard from '../components/RecipeCard';
 import { getRecipeById, mockRecipes } from '../data/mockRecipes';
@@ -143,9 +143,9 @@ const RecipePage: React.FC = () => {
     window.location.href = `/recipe/${recipeId}`;
   };
 
-  const generatePDF = () => {
+  const generateTextFile = () => {
     // Create a simple text-based PDF content
-    const pdfContent = `
+    const textContent = `
 RECIPE: ${recipe.title}
 
 DESCRIPTION:
@@ -178,11 +178,140 @@ Generated from RecipeFind - ${new Date().toLocaleDateString()}
     `.trim();
 
     // Create and download the file
-    const blob = new Blob([pdfContent], { type: 'text/plain' });
+    const blob = new Blob([textContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `${recipe.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_recipe.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const generatePDF = () => {
+    // Create HTML content for PDF
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>${recipe.title} - Recipe</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; color: #333; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #f97316; padding-bottom: 20px; }
+        .title { color: #f97316; font-size: 28px; margin-bottom: 10px; }
+        .description { font-style: italic; color: #666; margin-bottom: 20px; }
+        .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin: 20px 0; }
+        .info-item { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+        .info-label { font-weight: bold; color: #f97316; }
+        .section { margin: 30px 0; }
+        .section-title { color: #f97316; font-size: 20px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .ingredients li, .instructions li { margin-bottom: 8px; }
+        .nutrition-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .nutrition-item { display: flex; justify-content: space-between; padding: 10px; background: #f8f9fa; border-radius: 5px; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tag { background: #f97316; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; }
+        .footer { margin-top: 40px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">${recipe.title}</h1>
+        <p class="description">${recipe.description}</p>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Cook Time</div>
+                <div>${recipe.cookTime} minutes</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Servings</div>
+                <div>${recipe.servings}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Difficulty</div>
+                <div>${recipe.difficulty}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Calories</div>
+                <div>${recipe.calories}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title">Ingredients</h2>
+        <ul class="ingredients">
+            ${recipe.ingredients.map(ingredient => `<li>${ingredient}</li>`).join('')}
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title">Instructions</h2>
+        <ol class="instructions">
+            ${recipe.instructions.map(instruction => `<li>${instruction}</li>`).join('')}
+        </ol>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title">Nutrition Information</h2>
+        <div class="nutrition-grid">
+            <div class="nutrition-item">
+                <span>Calories</span>
+                <strong>${recipe.calories}</strong>
+            </div>
+            <div class="nutrition-item">
+                <span>Protein</span>
+                <span>${Math.round(recipe.calories * 0.15 / 4)}g</span>
+            </div>
+            <div class="nutrition-item">
+                <span>Carbohydrates</span>
+                <span>${Math.round(recipe.calories * 0.55 / 4)}g</span>
+            </div>
+            <div class="nutrition-item">
+                <span>Fat</span>
+                <span>${Math.round(recipe.calories * 0.30 / 9)}g</span>
+            </div>
+            <div class="nutrition-item">
+                <span>Fiber</span>
+                <span>${Math.round(recipe.calories * 0.02)}g</span>
+            </div>
+            <div class="nutrition-item">
+                <span>Sugar</span>
+                <span>${Math.round(recipe.calories * 0.08)}g</span>
+            </div>
+            <div class="nutrition-item">
+                <span>Sodium</span>
+                <span>${Math.round(recipe.calories * 0.8)}mg</span>
+            </div>
+            <div class="nutrition-item">
+                <span>Per Serving</span>
+                <strong>${Math.round(recipe.calories / recipe.servings)} cal</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title">Recipe Tags</h2>
+        <div class="tags">
+            ${recipe.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Recipe from RecipeFind • Generated on ${new Date().toLocaleDateString()}</p>
+        <p>Cuisine: ${recipe.cuisine} • Category: ${recipe.category}</p>
+    </div>
+</body>
+</html>
+    `.trim();
+
+    // Create and download the HTML file (which can be opened and printed as PDF)
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${recipe.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_recipe.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -212,13 +341,15 @@ Generated from RecipeFind - ${new Date().toLocaleDateString()}
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Button */}
-        <button
-          onClick={handleBackClick}
-          className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors mb-6"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back</span>
-        </button>
+        <div className="mb-6">
+          <button
+            onClick={handleBackClick}
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back</span>
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -281,13 +412,22 @@ Generated from RecipeFind - ${new Date().toLocaleDateString()}
                 </p>
 
                 <div className="flex flex-wrap gap-3 mb-6">
-                  <button
-                    onClick={generatePDF}
-                    className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors font-medium"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Download Recipe</span>
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={generatePDF}
+                      className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Download PDF</span>
+                    </button>
+                    <button
+                      onClick={generateTextFile}
+                      className="flex items-center space-x-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span>Download Text</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -447,48 +587,58 @@ Generated from RecipeFind - ${new Date().toLocaleDateString()}
                     </h3>
 
                     {/* Add Review Form */}
-                    {user && (
-                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
-                        <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                          Write a Review
-                        </h4>
-                        
-                        {/* Rating Stars */}
-                        <div className="flex items-center space-x-1 mb-3">
-                          <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Rating:</span>
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              key={star}
-                              onClick={() => setUserRating(star)}
-                              className="transition-colors"
-                            >
-                              <Star
-                                className={`w-5 h-5 ${
-                                  star <= userRating
-                                    ? 'text-yellow-400 fill-current'
-                                    : 'text-gray-300 dark:text-gray-600'
-                                }`}
-                              />
-                            </button>
-                          ))}
+                    {user ? (
+                      <div>
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                          <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+                            Write a Review
+                          </h4>
+                          
+                          {/* Rating Stars */}
+                          <div className="flex items-center space-x-1 mb-3">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Rating:</span>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                onClick={() => setUserRating(star)}
+                                className="transition-colors"
+                              >
+                                <Star
+                                  className={`w-5 h-5 ${
+                                    star <= userRating
+                                      ? 'text-yellow-400 fill-current'
+                                      : 'text-gray-300 dark:text-gray-600'
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+
+                          <textarea
+                            value={userReview}
+                            onChange={(e) => setUserReview(e.target.value)}
+                            placeholder="Share your experience with this recipe..."
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 mb-3"
+                            rows={3}
+                          />
+
+                          <button
+                            onClick={handleSubmitReview}
+                            disabled={!userRating || !userReview.trim() || isSubmittingReview}
+                            className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                          >
+                            <Send className="w-4 h-4" />
+                            <span>{isSubmittingReview ? 'Submitting...' : 'Submit Review'}</span>
+                          </button>
                         </div>
-
-                        <textarea
-                          value={userReview}
-                          onChange={(e) => setUserReview(e.target.value)}
-                          placeholder="Share your experience with this recipe..."
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 mb-3"
-                          rows={3}
-                        />
-
-                        <button
-                          onClick={handleSubmitReview}
-                          disabled={!userRating || !userReview.trim() || isSubmittingReview}
-                          className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                        >
-                          <Send className="w-4 h-4" />
-                          <span>{isSubmittingReview ? 'Submitting...' : 'Submit Review'}</span>
-                        </button>
+                      </div>
+                    ) : (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                        <p className="text-blue-800 dark:text-blue-200 text-center">
+                          <a href="/login" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                            Sign in
+                          </a> to write a review and rate this recipe.
+                        </p>
                       </div>
                     )}
 

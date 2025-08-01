@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Filter, SortDesc } from 'lucide-react';
+import { Clock, Filter, SortDesc, ArrowLeft } from 'lucide-react';
 import Header from '../components/Header';
 import SearchBar from '../components/SearchBar';
 import RecipeCard from '../components/RecipeCard';
@@ -72,6 +72,10 @@ const SearchResults: React.FC = () => {
     window.location.href = `/recipe/${recipeId}`;
   };
 
+  const handleBackClick = () => {
+    window.location.href = '/';
+  };
+
   const getSortedAndFilteredRecipes = () => {
     let filteredRecipes = recipes;
 
@@ -112,6 +116,17 @@ const SearchResults: React.FC = () => {
       <Header />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back Button */}
+        <div className="mb-6">
+          <button
+            onClick={handleBackClick}
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Home</span>
+          </button>
+        </div>
+
         {/* Search Bar */}
         <div className="mb-8">
           <SearchBar 
