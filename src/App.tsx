@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import SearchResults from './pages/SearchResults';
 import Profile from './pages/Profile';
+import RecipePage from './pages/RecipePage';
 
 function App() {
   const path = window.location.pathname;
@@ -23,7 +24,12 @@ function App() {
         return <SearchResults />;
       case '/profile':
         return <Profile />;
+      case '/recipe':
+        return <RecipePage />;
       default:
+        if (path.startsWith('/recipe/')) {
+          return <RecipePage />;
+        }
         return <Home />;
     }
   };
