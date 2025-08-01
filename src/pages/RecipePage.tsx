@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Clock, Users, Star, Heart, Bookmark, ChefHat, Send, ThumbsUp } from 'lucide-react';
+import { ArrowLeft, Clock, Users, Star, Heart, Bookmark, ChefHat, Send, ThumbsUp, Download, Activity } from 'lucide-react';
 import Header from '../components/Header';
 import RecipeCard from '../components/RecipeCard';
 import { getRecipeById, mockRecipes } from '../data/mockRecipes';
@@ -23,7 +23,7 @@ const RecipePage: React.FC = () => {
   const [userRating, setUserRating] = useState(0);
   const [userReview, setUserReview] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ingredients' | 'instructions' | 'reviews'>('ingredients');
+  const [activeTab, setActiveTab] = useState<'ingredients' | 'instructions' | 'nutrition' | 'reviews'>('ingredients');
   const { user, addToFavorites, removeFromFavorites, addToSaved, removeFromSaved } = useAuth();
 
   useEffect(() => {
@@ -143,6 +143,52 @@ const RecipePage: React.FC = () => {
     window.location.href = `/recipe/${recipeId}`;
   };
 
+  const generatePDF = () => {
+    // Create a simple text-based PDF content
+    const pdfContent = `
+RECIPE: ${recipe.title}
+
+DESCRIPTION:
+${recipe.description}
+
+COOK TIME: ${recipe.cookTime} minutes
+SERVINGS: ${recipe.servings}
+DIFFICULTY: ${recipe.difficulty}
+CUISINE: ${recipe.cuisine}
+CATEGORY: ${recipe.category}
+
+NUTRITION INFORMATION:
+Calories: ${recipe.calories}
+Protein: ${Math.round(recipe.calories * 0.15 / 4)}g
+Carbohydrates: ${Math.round(recipe.calories * 0.55 / 4)}g
+Fat: ${Math.round(recipe.calories * 0.30 / 9)}g
+Fiber: ${Math.round(recipe.calories * 0.02)}g
+Sugar: ${Math.round(recipe.calories * 0.08)}g
+Sodium: ${Math.round(recipe.calories * 0.8)}mg
+
+INGREDIENTS:
+${recipe.ingredients.map((ingredient, index) => `${index + 1}. ${ingredient}`).join('\n')}
+
+INSTRUCTIONS:
+${recipe.instructions.map((instruction, index) => `${index + 1}. ${instruction}`).join('\n')}
+
+TAGS: ${recipe.tags.join(', ')}
+
+Generated from RecipeFind - ${new Date().toLocaleDateString()}
+    `.trim();
+
+    // Create and download the file
+    const blob = new Blob([pdfContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${recipe.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_recipe.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const averageRating = reviews.length > 0 
     ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length 
     : recipe.rating;
@@ -234,6 +280,16 @@ const RecipePage: React.FC = () => {
                   {recipe.description}
                 </p>
 
+                <div className="flex flex-wrap gap-3 mb-6">
+                  <button
+                    onClick={generatePDF}
+                    className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Recipe</span>
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <Clock className="w-6 h-6 text-orange-500 mx-auto mb-2" />
@@ -278,6 +334,7 @@ const RecipePage: React.FC = () => {
                   {[
                     { id: 'ingredients', name: 'Ingredients' },
                     { id: 'instructions', name: 'Instructions' },
+                    { id: 'nutrition', name: 'Nutrition' },
                     { id: 'reviews', name: `Reviews (${reviews.length})` }
                   ].map((tab) => (
                     <button
@@ -327,6 +384,59 @@ const RecipePage: React.FC = () => {
                         </li>
                       ))}
                     </ol>
+                  </div>
+                )}
+
+                {activeTab === 'nutrition' && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
+                      <Activity className="w-5 h-5 text-orange-500" />
+                      <span>Nutrition Information</span>
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          <span className="font-medium text-gray-900 dark:text-white">Calories</span>
+                          <span className="text-orange-600 dark:text-orange-400 font-semibold">{recipe.calories}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          <span className="font-medium text-gray-900 dark:text-white">Protein</span>
+                          <span className="text-gray-700 dark:text-gray-300">{Math.round(recipe.calories * 0.15 / 4)}g</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          <span className="font-medium text-gray-900 dark:text-white">Carbohydrates</span>
+                          <span className="text-gray-700 dark:text-gray-300">{Math.round(recipe.calories * 0.55 / 4)}g</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          <span className="font-medium text-gray-900 dark:text-white">Fat</span>
+                          <span className="text-gray-700 dark:text-gray-300">{Math.round(recipe.calories * 0.30 / 9)}g</span>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          <span className="font-medium text-gray-900 dark:text-white">Fiber</span>
+                          <span className="text-gray-700 dark:text-gray-300">{Math.round(recipe.calories * 0.02)}g</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          <span className="font-medium text-gray-900 dark:text-white">Sugar</span>
+                          <span className="text-gray-700 dark:text-gray-300">{Math.round(recipe.calories * 0.08)}g</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          <span className="font-medium text-gray-900 dark:text-white">Sodium</span>
+                          <span className="text-gray-700 dark:text-gray-300">{Math.round(recipe.calories * 0.8)}mg</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          <span className="font-medium text-gray-900 dark:text-white">Per Serving</span>
+                          <span className="text-orange-600 dark:text-orange-400 font-semibold">{Math.round(recipe.calories / recipe.servings)} cal</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <p className="text-blue-800 dark:text-blue-200 text-sm">
+                        <strong>Note:</strong> Nutrition values are estimates based on typical ingredient compositions. 
+                        Actual values may vary depending on specific ingredients and preparation methods used.
+                      </p>
+                    </div>
                   </div>
                 )}
 

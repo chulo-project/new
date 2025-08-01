@@ -81,21 +81,21 @@ const Header: React.FC<HeaderProps> = ({ onSearchClick }) => {
                   <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700 py-2">
                     <button
                       onClick={handleProfileClick}
-                      className="w-full flex items-center space-x-2 px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      className="w-full flex items-center space-x-2 px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
                     >
                       <User className="w-4 h-4" />
                       <span>Profile</span>
                     </button>
                     <button
                       onClick={() => window.location.href = '/search?favorites=true'}
-                      className="w-full flex items-center space-x-2 px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      className="w-full flex items-center space-x-2 px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
                     >
                       <Heart className="w-4 h-4" />
                       <span>Favorites</span>
                     </button>
                     <button
                       onClick={() => window.location.href = '/search?saved=true'}
-                      className="w-full flex items-center space-x-2 px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      className="w-full flex items-center space-x-2 px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
                     >
                       <Bookmark className="w-4 h-4" />
                       <span>Saved Recipes</span>
@@ -158,21 +158,21 @@ const Header: React.FC<HeaderProps> = ({ onSearchClick }) => {
                 <>
                   <button
                     onClick={handleProfileClick}
-                    className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
                   >
                     <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <span className="text-gray-700 dark:text-gray-300">Profile</span>
                   </button>
                   <button
                     onClick={() => window.location.href = '/search?favorites=true'}
-                    className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
                   >
                     <Heart className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <span className="text-gray-700 dark:text-gray-300">Favorites</span>
                   </button>
                   <button
                     onClick={() => window.location.href = '/search?saved=true'}
-                    className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
                   >
                     <Bookmark className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <span className="text-gray-700 dark:text-gray-300">Saved Recipes</span>

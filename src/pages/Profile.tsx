@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { User, Mail, Calendar, Camera, Trash2, History, Heart, Bookmark, ArrowLeft } from 'lucide-react';
+import { User, Mail, Calendar, Camera, Trash2, History, Heart, Bookmark, ArrowLeft, Key, CheckCircle } from 'lucide-react';
 import Header from '../components/Header';
 import RecipeCard from '../components/RecipeCard';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +9,15 @@ const Profile: React.FC = () => {
   const { user, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'favorites' | 'saved' | 'history'>('overview');
   const [isEditing, setIsEditing] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetPasswordStep, setResetPasswordStep] = useState<'email' | 'code' | 'success'>('email');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [generatedResetCode, setGeneratedResetCode] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
   const [isUploading, setIsUploading] = useState(false);
@@ -75,6 +84,73 @@ const Profile: React.FC = () => {
     updateProfile({
       profilePicture: undefined
     });
+  };
+
+  const handleResetPasswordClick = () => {
+    setShowResetPassword(true);
+    setResetPasswordStep('email');
+    setResetEmail(user?.email || '');
+    setResetError('');
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    setIsResettingPassword(true);
+
+    try {
+      // Simulate sending verification code
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedResetCode(code);
+      setResetPasswordStep('code');
+    } catch (err) {
+      setResetError('Failed to send verification code. Please try again.');
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const handleResetCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+
+    if (resetCode !== generatedResetCode) {
+      setResetError('Invalid verification code. Please try again.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setResetError('Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setResetError('Password must be at least 6 characters long');
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      // Simulate password reset
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setResetPasswordStep('success');
+    } catch (err) {
+      setResetError('Failed to reset password. Please try again.');
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const closeResetPassword = () => {
+    setShowResetPassword(false);
+    setResetPasswordStep('email');
+    setResetEmail('');
+    setResetCode('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setGeneratedResetCode('');
+    setResetError('');
   };
 
   const handleRecipeClick = (recipeId: string) => {
@@ -214,6 +290,13 @@ const Profile: React.FC = () => {
                     className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
                   >
                     Edit Profile
+                  </button>
+                  <button
+                    onClick={handleResetPasswordClick}
+                    className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors flex items-center space-x-2"
+                  >
+                    <Key className="w-4 h-4" />
+                    <span>Reset Password</span>
                   </button>
                 </div>
               )}
@@ -390,6 +473,167 @@ const Profile: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Reset Password Modal */}
+      {showResetPassword && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {resetPasswordStep === 'email' && (
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Reset Password</h3>
+                  <button
+                    onClick={closeResetPassword}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    ×
+                  </button>
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  We'll send a verification code to your email address.
+                </p>
+                <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+                  {resetError && (
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                      <p className="text-red-600 dark:text-red-400 text-sm">{resetError}</p>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      required
+                    />
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={closeResetPassword}
+                      className="flex-1 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isResettingPassword}
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium disabled:opacity-50"
+                    >
+                      {isResettingPassword ? 'Sending...' : 'Send Code'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {resetPasswordStep === 'code' && (
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Enter Verification Code</h3>
+                  <button
+                    onClick={closeResetPassword}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+                  <p className="text-blue-800 dark:text-blue-200 text-sm text-center">
+                    <strong>Demo Code:</strong> {generatedResetCode}
+                  </p>
+                </div>
+                <form onSubmit={handleResetCodeSubmit} className="space-y-4">
+                  {resetError && (
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                      <p className="text-red-600 dark:text-red-400 text-sm">{resetError}</p>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Verification Code
+                    </label>
+                    <input
+                      type="text"
+                      value={resetCode}
+                      onChange={(e) => setResetCode(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center tracking-widest"
+                      placeholder="000000"
+                      maxLength={6}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      required
+                    />
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setResetPasswordStep('email')}
+                      className="flex-1 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isResettingPassword}
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium disabled:opacity-50"
+                    >
+                      {isResettingPassword ? 'Resetting...' : 'Reset Password'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {resetPasswordStep === 'success' && (
+              <div className="p-6 text-center">
+                <div className="flex justify-center mb-4">
+                  <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-8 h-8 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Password Reset Successfully
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Your password has been updated successfully.
+                </p>
+                <button
+                  onClick={closeResetPassword}
+                  className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
