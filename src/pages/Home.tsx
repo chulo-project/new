@@ -38,9 +38,9 @@ const Home: React.FC = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="relative py-20 px-4 sm:px-6 lg:px-8">
+      <section className="relative px-4 sm:px-6 lg:px-8 flex items-center justify-center" style={{ minHeight: 'calc(100vh - 4rem)' }}>
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-red-500/10 dark:from-orange-500/5 dark:to-red-500/5" />
-        <div className="relative max-w-4xl mx-auto text-center">
+        <div className="relative max-w-4xl mx-auto text-center w-full">
           <div className="flex justify-center mb-6">
             <div className="p-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl">
               <ChefHat className="w-12 h-12 text-white" />
@@ -121,12 +121,7 @@ const Home: React.FC = () => {
                       <X className="w-5 h-5" />
                     </button>
                   </div>
-                  <div className="p-6 overflow-y-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                    <style jsx>{`
-                      .overflow-y-auto::-webkit-scrollbar {
-                        display: none;
-                      }
-                    `}</style>
+                  <div className="p-6 overflow-y-auto" style={{ maxHeight: '60vh' }}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -226,52 +221,35 @@ const Home: React.FC = () => {
       </section>
 
       {/* Quick Stats */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800 relative overflow-hidden">
-        {/* Decorative Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-10 left-10 w-32 h-32 border-2 border-orange-500 rounded-full"></div>
-          <div className="absolute top-20 right-20 w-24 h-24 border-2 border-red-500 rounded-full"></div>
-          <div className="absolute bottom-10 left-1/4 w-20 h-20 border-2 border-orange-400 rounded-full"></div>
-          <div className="absolute bottom-20 right-1/3 w-28 h-28 border-2 border-red-400 rounded-full"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 border-2 border-orange-300 rounded-full"></div>
-          
-          {/* Spiral Pattern */}
-          <svg className="absolute top-1/4 right-10 w-24 h-24" viewBox="0 0 100 100">
-            <path d="M50,10 Q90,50 50,90 Q10,50 50,10" stroke="currentColor" strokeWidth="2" fill="none" className="text-orange-500" />
-          </svg>
-          <svg className="absolute bottom-1/4 left-10 w-20 h-20" viewBox="0 0 100 100">
-            <path d="M20,20 Q80,20 80,80 Q20,80 20,20" stroke="currentColor" strokeWidth="2" fill="none" className="text-red-500" />
-          </svg>
-        </div>
-        
+      <section className="py-8 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Platform Statistics</h2>
             <p className="text-gray-600 dark:text-gray-400">Join our growing community of food enthusiasts</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center p-6 bg-gray-50 dark:bg-gray-700 rounded-2xl relative z-10">
+            <div className="text-center p-6 bg-gray-50 dark:bg-gray-700 rounded-2xl">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl mb-4">
                 <Users className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">25,000+</h3>
               <p className="text-gray-600 dark:text-gray-400">Active Users</p>
             </div>
-            <div className="text-center">
+            <div className="text-center p-6 bg-gray-50 dark:bg-gray-700 rounded-2xl">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl mb-4">
                 <BookOpen className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">10,000+</h3>
               <p className="text-gray-600 dark:text-gray-400">Recipe Collection</p>
             </div>
-            <div className="text-center">
+            <div className="text-center p-6 bg-gray-50 dark:bg-gray-700 rounded-2xl">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl mb-4">
                 <MessageSquare className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">50,000+</h3>
               <p className="text-gray-600 dark:text-gray-400">Recipe Reviews</p>
             </div>
-            <div className="text-center">
+            <div className="text-center p-6 bg-gray-50 dark:bg-gray-700 rounded-2xl">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl mb-4">
                 <Star className="w-8 h-8 text-white" />
               </div>
@@ -313,7 +291,7 @@ const Home: React.FC = () => {
       )}
 
       {/* Popular This Week */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
+      <section className="py-4 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-3">
