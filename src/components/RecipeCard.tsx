@@ -3,6 +3,11 @@ import { Clock, Users, Star, Heart, Bookmark } from 'lucide-react';
 import { Recipe } from '../types';
 import { useAuth } from '../context/AuthContext';
 
+const truncateDescription = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength).trim() + '...';
+};
+
 interface RecipeCardProps {
   recipe: Recipe;
   onClick?: () => void;
@@ -102,8 +107,16 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
           </div>
         </div>
         
-        <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
-          {recipe.description}
+        <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+          <span className="hidden lg:inline">
+            {truncateDescription(recipe.description, 150)}
+          </span>
+          <span className="hidden md:inline lg:hidden">
+            {truncateDescription(recipe.description, 100)}
+          </span>
+          <span className="inline md:hidden">
+            {truncateDescription(recipe.description, 50)}
+          </span>
         </p>
         
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">

@@ -8,6 +8,7 @@ import StatCard from '../components/StatCard';
 import SearchButton from '../components/SearchButton';
 import FormField from '../components/FormField';
 import CTASection from '../components/CTASection';
+import ScrollToTop from '../components/ScrollToTop';
 import { mockRecipes } from '../data/mockRecipes';
 import { useAuth } from '../context/AuthContext';
 
@@ -49,7 +50,7 @@ const Home: React.FC = () => {
     { icon: Users, value: '25,000+', label: 'Active Users', gradientFrom: 'from-blue-500', gradientTo: 'to-purple-500' },
     { icon: BookOpen, value: '10,000+', label: 'Recipe Collection', gradientFrom: 'from-orange-500', gradientTo: 'to-red-500' },
     { icon: MessageSquare, value: '50,000+', label: 'Recipe Reviews', gradientFrom: 'from-green-500', gradientTo: 'to-emerald-500' },
-    { icon: ChefHat, value: '4.8/5', label: 'Average Rating', gradientFrom: 'from-yellow-500', gradientTo: 'to-orange-500' }
+    { icon: TrendingUp, value: '1,247', label: 'Visitors Today', gradientFrom: 'from-yellow-500', gradientTo: 'to-orange-500' }
   ];
 
   const ADVANCED_SEARCH_FIELDS = [
@@ -153,10 +154,10 @@ const Home: React.FC = () => {
             
             {/* Mobile Advanced Search Button */}
             {isMobile && (
-              <div className="flex justify-center mt-4">
+              <div className="flex justify-center mt-4 w-full">
                 <button
                   onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
-                  className="flex items-center space-x-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 px-6 py-3 rounded-xl transition-all duration-200 font-medium w-auto"
+                  className="flex items-center justify-center space-x-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 px-6 py-3 rounded-xl transition-all duration-200 font-medium"
                 >
                   <Filter className="w-4 h-4" />
                   <span>Advanced Search</span>
@@ -184,7 +185,7 @@ const Home: React.FC = () => {
 
             {/* Advanced Search Panel */}
             {showAdvancedSearch && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
                   <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Advanced Search</h3>
@@ -258,16 +259,16 @@ const Home: React.FC = () => {
       {user && (
         <section className="py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
-            <div className="mb-12 text-center sm:text-left">
-              <div className="flex items-center space-x-3 justify-center sm:justify-start mb-4">
+            <div className="mb-12 text-left">
+              <div className="flex items-center space-x-3 mb-4">
                 <Star className="w-8 h-8 text-orange-500" />
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Featured Recipes</h2>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-gray-600 dark:text-gray-400 text-center sm:text-left mb-2 sm:mb-0">Hand-picked recipes just for you</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-2 sm:mb-0">Hand-picked recipes just for you</p>
                 <button 
                   onClick={() => window.location.href = '/search'}
-                  className="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium flex items-center space-x-1 transition-colors justify-center sm:justify-start"
+                  className="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium flex items-center space-x-1 transition-colors"
                 >
                   <span>View All</span>
                 </button>
@@ -290,12 +291,12 @@ const Home: React.FC = () => {
       {/* Popular This Week */}
       <section className="py-4 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-12 text-center sm:text-left">
-            <div className="flex items-center space-x-3 justify-center sm:justify-start mb-4">
+          <div className="mb-12 text-left">
+            <div className="flex items-center space-x-3 mb-4">
               <TrendingUp className="w-8 h-8 text-orange-500" />
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Popular This Week</h2>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-center sm:text-left">Most loved recipes by our community</p>
+            <p className="text-gray-600 dark:text-gray-400">Most loved recipes by our community</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -316,6 +317,7 @@ const Home: React.FC = () => {
       </div>
       
       <Footer />
+      <ScrollToTop />
     </div>
   );
 };
