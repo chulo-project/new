@@ -9,17 +9,17 @@ const Profile: React.FC = () => {
   const { user, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'favorites' | 'saved' | 'history'>('overview');
   const [isEditing, setIsEditing] = useState(false);
-  const [showResetPassword, setShowResetPassword] = useState(false);
-  const [resetPasswordStep, setResetPasswordStep] = useState<'email' | 'code' | 'success'>('email');
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetCode, setResetCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [generatedResetCode, setGeneratedResetCode] = useState('');
-  const [resetError, setResetError] = useState('');
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [editingField, setEditingField] = useState<'name' | 'email' | 'password' | null>(null);
+  const [verificationStep, setVerificationStep] = useState<'input' | 'verify' | 'success'>('input');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [verificationError, setVerificationError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,18 +44,74 @@ const Profile: React.FC = () => {
     );
   }
 
-  const handleSave = () => {
-    updateProfile({
-      name: editName,
-      email: editEmail
-    });
-    setIsEditing(false);
+  const handleSave = async () => {
+    if (editingField === 'name') {
+      // Name changes don't require verification
+      updateProfile({ name: editName });
+      setIsEditing(false);
+      setEditingField(null);
+    } else if (editingField === 'email' || editingField === 'password') {
+      // Email and password changes require verification
+      setVerificationStep('verify');
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedCode(code);
+    }
   };
 
   const handleCancel = () => {
     setEditName(user.name);
     setEditEmail(user.email);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
     setIsEditing(false);
+    setEditingField(null);
+    setVerificationStep('input');
+    setVerificationCode('');
+    setVerificationError('');
+  };
+
+  const handleVerificationSubmit = async () => {
+    if (verificationCode !== generatedCode) {
+      setVerificationError('Invalid verification code. Please try again.');
+      return;
+    }
+
+    if (editingField === 'password') {
+      if (newPassword !== confirmPassword) {
+        setVerificationError('Passwords do not match');
+        return;
+      }
+      if (newPassword.length < 6) {
+        setVerificationError('Password must be at least 6 characters long');
+        return;
+      }
+    }
+
+    setIsProcessing(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      if (editingField === 'email') {
+        updateProfile({ email: editEmail });
+      } else if (editingField === 'password') {
+        // In a real app, you would update the password here
+        console.log('Password updated');
+      }
+      
+      setVerificationStep('success');
+    } catch (err) {
+      setVerificationError('An error occurred. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleEditField = (field: 'name' | 'email' | 'password') => {
+    setIsEditing(true);
+    setEditingField(field);
+    setVerificationStep('input');
+    setVerificationError('');
   };
 
   const handleProfilePictureClick = () => {
@@ -84,73 +140,6 @@ const Profile: React.FC = () => {
     updateProfile({
       profilePicture: undefined
     });
-  };
-
-  const handleResetPasswordClick = () => {
-    setShowResetPassword(true);
-    setResetPasswordStep('email');
-    setResetEmail(user?.email || '');
-    setResetError('');
-  };
-
-  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setResetError('');
-    setIsResettingPassword(true);
-
-    try {
-      // Simulate sending verification code
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedResetCode(code);
-      setResetPasswordStep('code');
-    } catch (err) {
-      setResetError('Failed to send verification code. Please try again.');
-    } finally {
-      setIsResettingPassword(false);
-    }
-  };
-
-  const handleResetCodeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setResetError('');
-
-    if (resetCode !== generatedResetCode) {
-      setResetError('Invalid verification code. Please try again.');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setResetError('Passwords do not match');
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      setResetError('Password must be at least 6 characters long');
-      return;
-    }
-
-    setIsResettingPassword(true);
-    try {
-      // Simulate password reset
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setResetPasswordStep('success');
-    } catch (err) {
-      setResetError('Failed to reset password. Please try again.');
-    } finally {
-      setIsResettingPassword(false);
-    }
-  };
-
-  const closeResetPassword = () => {
-    setShowResetPassword(false);
-    setResetPasswordStep('email');
-    setResetEmail('');
-    setResetCode('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setGeneratedResetCode('');
-    setResetError('');
   };
 
   const deleteSearchHistoryItem = (index: number) => {
@@ -210,9 +199,9 @@ const Profile: React.FC = () => {
 
         {/* Profile Header */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border dark:border-gray-700 p-6 mb-8">
-          <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center space-y-6 lg:space-y-0 lg:space-x-6">
             {/* Profile Picture */}
-            <div className="relative">
+            <div className="relative flex-shrink-0 mx-auto lg:mx-0">
               <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center">
                 {user.profilePicture ? (
                   <img
@@ -253,52 +242,170 @@ const Profile: React.FC = () => {
             </div>
 
             {/* Profile Info */}
-            <div className="flex-1">
+            <div className="flex-1 w-full">
               {isEditing ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      value={editEmail}
-                      onChange={(e) => setEditEmail(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={handleSave}
-                      className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
-                    >
-                      Save Changes
-                    </button>
-                    <button
-                      onClick={handleCancel}
-                      className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+                <div>
+                  {verificationStep === 'input' && (
+                    <div className="space-y-4">
+                      {editingField === 'name' && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Name
+                          </label>
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          />
+                        </div>
+                      )}
+                      
+                      {editingField === 'email' && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Email
+                          </label>
+                          <input
+                            type="email"
+                            value={editEmail}
+                            onChange={(e) => setEditEmail(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          />
+                        </div>
+                      )}
+                      
+                      {editingField === 'password' && (
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Current Password
+                            </label>
+                            <input
+                              type="password"
+                              value={currentPassword}
+                              onChange={(e) => setCurrentPassword(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              New Password
+                            </label>
+                            <input
+                              type="password"
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Confirm New Password
+                            </label>
+                            <input
+                              type="password"
+                              value={confirmPassword}
+                              onChange={(e) => setConfirmPassword(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                        <button
+                          onClick={handleSave}
+                          className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
+                        >
+                          {editingField === 'name' ? 'Save Changes' : 'Continue'}
+                        </button>
+                        <button
+                          onClick={handleCancel}
+                          className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {verificationStep === 'verify' && (
+                    <div className="space-y-4">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                        <p className="text-blue-800 dark:text-blue-200 text-sm text-center">
+                          <strong>Demo Code:</strong> {generatedCode}
+                        </p>
+                      </div>
+                      
+                      {verificationError && (
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                          <p className="text-red-600 dark:text-red-400 text-sm">{verificationError}</p>
+                        </div>
+                      )}
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Verification Code
+                        </label>
+                        <input
+                          type="text"
+                          value={verificationCode}
+                          onChange={(e) => setVerificationCode(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center tracking-widest"
+                          placeholder="000000"
+                          maxLength={6}
+                        />
+                      </div>
+                      
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                        <button
+                          onClick={handleVerificationSubmit}
+                          disabled={isProcessing}
+                          className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium disabled:opacity-50"
+                        >
+                          {isProcessing ? 'Verifying...' : 'Verify & Save'}
+                        </button>
+                        <button
+                          onClick={handleCancel}
+                          className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {verificationStep === 'success' && (
+                    <div className="text-center space-y-4">
+                      <div className="flex justify-center">
+                        <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
+                          <CheckCircle className="w-8 h-8 text-white" />
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                          {editingField === 'email' ? 'Email Updated' : 'Password Updated'}
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                          Your {editingField} has been updated successfully.
+                        </p>
+                        <button
+                          onClick={handleCancel}
+                          className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
+                        >
+                          Done
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-2 text-center lg:text-left">
                     {user.name}
                   </h1>
-                  <div className="flex items-center space-x-4 text-gray-600 dark:text-gray-400 mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-1 sm:space-y-0 text-gray-600 dark:text-gray-400 mb-4 text-center lg:text-left">
                     <div className="flex items-center space-x-1">
                       <Mail className="w-4 h-4" />
                       <span>{user.email}</span>
@@ -308,19 +415,26 @@ const Profile: React.FC = () => {
                       <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                     <button
-                      onClick={() => setIsEditing(true)}
+                      onClick={() => handleEditField('name')}
                       className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
                     >
-                      Edit Profile
+                      Edit Name
                     </button>
                     <button
-                      onClick={handleResetPasswordClick}
+                      onClick={() => handleEditField('email')}
+                      className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors flex items-center space-x-2"
+                    >
+                      <Mail className="w-4 h-4" />
+                      <span>Change Email</span>
+                    </button>
+                    <button
+                      onClick={() => handleEditField('password')}
                       className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors flex items-center space-x-2"
                     >
                       <Key className="w-4 h-4" />
-                      <span>Reset Password</span>
+                      <span>Change Password</span>
                     </button>
                   </div>
                 </div>
@@ -332,14 +446,14 @@ const Profile: React.FC = () => {
         {/* Tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border dark:border-gray-700 overflow-hidden">
           <div className="border-b dark:border-gray-700">
-            <nav className="flex space-x-8 px-6">
+            <nav className="flex flex-wrap gap-2 sm:gap-8 px-4 sm:px-6">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-sm transition-colors ${
+                    className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
                       activeTab === tab.id
                         ? 'border-orange-500 text-orange-600 dark:text-orange-400'
                         : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
@@ -366,7 +480,7 @@ const Profile: React.FC = () => {
             {activeTab === 'overview' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-6 text-white">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex flex-col sm:flex-row items-center sm:space-x-3 space-y-2 sm:space-y-0 text-center sm:text-left">
                     <Heart className="w-8 h-8" />
                     <div>
                       <p className="text-orange-100">Favorite Recipes</p>
@@ -375,7 +489,7 @@ const Profile: React.FC = () => {
                   </div>
                 </div>
                 <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl p-6 text-white">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex flex-col sm:flex-row items-center sm:space-x-3 space-y-2 sm:space-y-0 text-center sm:text-left">
                     <Bookmark className="w-8 h-8" />
                     <div>
                       <p className="text-blue-100">Saved Recipes</p>
@@ -384,7 +498,7 @@ const Profile: React.FC = () => {
                   </div>
                 </div>
                 <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl p-6 text-white">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex flex-col sm:flex-row items-center sm:space-x-3 space-y-2 sm:space-y-0 text-center sm:text-left">
                     <History className="w-8 h-8" />
                     <div>
                       <p className="text-green-100">Searches</p>
@@ -398,7 +512,7 @@ const Profile: React.FC = () => {
             {activeTab === 'favorites' && (
               <div>
                 {favoriteRecipes.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {favoriteRecipes.map((recipe) => (
                       <RecipeCard
                         key={recipe.id}
@@ -430,7 +544,7 @@ const Profile: React.FC = () => {
             {activeTab === 'saved' && (
               <div>
                 {savedRecipes.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {savedRecipes.map((recipe) => (
                       <RecipeCard
                         key={recipe.id}
@@ -476,18 +590,18 @@ const Profile: React.FC = () => {
                       {user.searchHistory.map((query, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group"
+                          className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group space-y-2 sm:space-y-0"
                         >
                           <div 
-                            className="flex items-center space-x-3 flex-1 cursor-pointer"
+                            className="flex items-center space-x-3 flex-1 cursor-pointer min-w-0"
                             onClick={() => window.location.href = `/search?q=${encodeURIComponent(query)}`}
                           >
                             <History className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-900 dark:text-white">{query}</span>
+                            <span className="text-gray-900 dark:text-white truncate">{query}</span>
                           </div>
                           <button
                             onClick={() => deleteSearchHistoryItem(index)}
-                            className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200 p-1"
+                            className="opacity-0 group-hover:opacity-100 sm:opacity-100 text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200 p-1 self-end sm:self-center"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -517,167 +631,6 @@ const Profile: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Reset Password Modal */}
-      {showResetPassword && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            {resetPasswordStep === 'email' && (
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Reset Password</h3>
-                  <button
-                    onClick={closeResetPassword}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  >
-                    ×
-                  </button>
-                </div>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  We'll send a verification code to your email address.
-                </p>
-                <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
-                  {resetError && (
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                      <p className="text-red-600 dark:text-red-400 text-sm">{resetError}</p>
-                    </div>
-                  )}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      value={resetEmail}
-                      onChange={(e) => setResetEmail(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      required
-                    />
-                  </div>
-                  <div className="flex space-x-3">
-                    <button
-                      type="button"
-                      onClick={closeResetPassword}
-                      className="flex-1 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isResettingPassword}
-                      className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium disabled:opacity-50"
-                    >
-                      {isResettingPassword ? 'Sending...' : 'Send Code'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            {resetPasswordStep === 'code' && (
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Enter Verification Code</h3>
-                  <button
-                    onClick={closeResetPassword}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  >
-                    ×
-                  </button>
-                </div>
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
-                  <p className="text-blue-800 dark:text-blue-200 text-sm text-center">
-                    <strong>Demo Code:</strong> {generatedResetCode}
-                  </p>
-                </div>
-                <form onSubmit={handleResetCodeSubmit} className="space-y-4">
-                  {resetError && (
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                      <p className="text-red-600 dark:text-red-400 text-sm">{resetError}</p>
-                    </div>
-                  )}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Verification Code
-                    </label>
-                    <input
-                      type="text"
-                      value={resetCode}
-                      onChange={(e) => setResetCode(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center tracking-widest"
-                      placeholder="000000"
-                      maxLength={6}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      New Password
-                    </label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Confirm New Password
-                    </label>
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      required
-                    />
-                  </div>
-                  <div className="flex space-x-3">
-                    <button
-                      type="button"
-                      onClick={() => setResetPasswordStep('email')}
-                      className="flex-1 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isResettingPassword}
-                      className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium disabled:opacity-50"
-                    >
-                      {isResettingPassword ? 'Resetting...' : 'Reset Password'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            {resetPasswordStep === 'success' && (
-              <div className="p-6 text-center">
-                <div className="flex justify-center mb-4">
-                  <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-8 h-8 text-white" />
-                  </div>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Password Reset Successfully
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Your password has been updated successfully.
-                </p>
-                <button
-                  onClick={closeResetPassword}
-                  className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
-                >
-                  Done
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -125,7 +125,7 @@ const Home: React.FC = () => {
           </div>
           
           {/* Search Bar */}
-          <div className="max-w-2xl mx-auto space-y-4">
+          <div className="max-w-2xl mx-auto">
             <div className="relative">
               <SearchBar 
                 onSearch={handleSearch} 
@@ -151,28 +151,28 @@ const Home: React.FC = () => {
                 </button>
               </div>
             </div>
-            
-            {/* Mobile Advanced Search Button */}
-            {isMobile && (
-              <div className="flex justify-center mt-4 w-full">
-                <button
-                  onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
-                  className="flex items-center justify-center space-x-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 px-6 py-3 rounded-xl transition-all duration-200 font-medium"
-                >
-                  <Filter className="w-4 h-4" />
-                  <span>Advanced Search</span>
-                </button>
-              </div>
-            )}
-            
-            {/* Search Buttons */}
-            <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              <div className="flex justify-center space-x-3">
+
+            {/* Search Buttons Container */}
+            <div className="mt-6 space-y-4">
+              {/* Mobile Advanced Search Button */}
+              {isMobile && (
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+                    className="flex items-center justify-center space-x-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 px-6 py-3 rounded-xl transition-all duration-200 font-medium"
+                  >
+                    <Filter className="w-4 h-4" />
+                    <span>Advanced Search</span>
+                  </button>
+                </div>
+              )}
+              
+              {/* Search Buttons */}
+              <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4">
                 <SearchButton
                   onClick={() => handleSearch('')}
                   icon={Search}
                   text="Search Recipes"
-                  className="hidden sm:flex"
                 />
                 <SearchButton
                   onClick={handleLuckySearch}
@@ -182,6 +182,7 @@ const Home: React.FC = () => {
                 />
               </div>
             </div>
+          </div>
 
             {/* Advanced Search Panel */}
             {showAdvancedSearch && (
@@ -226,7 +227,6 @@ const Home: React.FC = () => {
                 </div>
               </div>
             )}
-          </div>
         </div>
       </section>
 
