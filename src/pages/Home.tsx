@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
 
 const Home: React.FC = () => {
   const { user, addToSearchHistory } = useAuth();
+  const [query, setQuery] = useState('');
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const [selectedCuisine, setSelectedCuisine] = useState('');
@@ -22,6 +23,18 @@ const Home: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isLuckySearching, setIsLuckySearching] = useState(false);
   const [isImageSearching, setIsImageSearching] = useState(false);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [isLoadingFeatured, setIsLoadingFeatured] = useState(true);
+  const [isLoadingPopular, setIsLoadingPopular] = useState(true);
+  const [featuredRecipes, setFeaturedRecipes] = useState<typeof mockRecipes>([]);
+  const [popularRecipes, setPopularRecipes] = useState<typeof mockRecipes>([]);
+  const [statsData, setStatsData] = useState([
+    { icon: Users, value: '0', label: 'Active Users', gradientFrom: 'from-blue-500', gradientTo: 'to-purple-500' },
+    { icon: BookOpen, value: '0', label: 'Recipe Collection', gradientFrom: 'from-orange-500', gradientTo: 'to-red-500' },
+    { icon: MessageSquare, value: '0', label: 'Recipe Reviews', gradientFrom: 'from-green-500', gradientTo: 'to-emerald-500' },
+    { icon: User, value: '0', label: 'Visitors Today', gradientFrom: 'from-yellow-500', gradientTo: 'to-orange-500' }
+  ]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -30,6 +43,55 @@ const Home: React.FC = () => {
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Simulate API call for platform statistics
+  useEffect(() => {
+    const fetchStats = async () => {
+      setIsLoadingStats(true);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setStatsData([
+        { icon: Users, value: '25,000+', label: 'Active Users', gradientFrom: 'from-blue-500', gradientTo: 'to-purple-500' },
+        { icon: BookOpen, value: '10,000+', label: 'Recipe Collection', gradientFrom: 'from-orange-500', gradientTo: 'to-red-500' },
+        { icon: MessageSquare, value: '50,000+', label: 'Recipe Reviews', gradientFrom: 'from-green-500', gradientTo: 'to-emerald-500' },
+        { icon: User, value: '1,247', label: 'Visitors Today', gradientFrom: 'from-yellow-500', gradientTo: 'to-orange-500' }
+      ]);
+      setIsLoadingStats(false);
+    };
+
+    fetchStats();
+  }, []);
+
+  // Simulate API call for featured recipes
+  useEffect(() => {
+    const fetchFeaturedRecipes = async () => {
+      if (!user) return;
+      
+      setIsLoadingFeatured(true);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setFeaturedRecipes(mockRecipes.slice(0, 6));
+      setIsLoadingFeatured(false);
+    };
+
+    fetchFeaturedRecipes();
+  }, [user]);
+
+  // Simulate API call for popular recipes
+  useEffect(() => {
+    const fetchPopularRecipes = async () => {
+      setIsLoadingPopular(true);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1800));
+      
+      setPopularRecipes(mockRecipes.filter(recipe => recipe.rating >= 4.7).slice(0, 4));
+      setIsLoadingPopular(false);
+    };
+
+    fetchPopularRecipes();
   }, []);
 
   // Event handlers
@@ -85,11 +147,19 @@ const Home: React.FC = () => {
   };
 
   const handleImageSearch = async () => {
+    // Trigger file input click
+    fileInputRef.current?.click();
+  };
+
+  const handleImageFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
     setIsImageSearching(true);
-    
+
     try {
-      // Simulate API call delay for image processing
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate image processing API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Navigate to search results with image search indicator
       window.location.href = '/search?q=image_search_results&type=image';
@@ -97,20 +167,16 @@ const Home: React.FC = () => {
       console.error('Image search failed:', error);
     } finally {
       setIsImageSearching(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
   const handleRecipeClick = (recipeId: string) => {
     window.location.href = `/recipe/${recipeId}`;
   };
-
-  // Constants
-  const STATS_DATA = [
-    { icon: Users, value: '25,000+', label: 'Active Users', gradientFrom: 'from-blue-500', gradientTo: 'to-purple-500' },
-    { icon: BookOpen, value: '10,000+', label: 'Recipe Collection', gradientFrom: 'from-orange-500', gradientTo: 'to-red-500' },
-    { icon: MessageSquare, value: '50,000+', label: 'Recipe Reviews', gradientFrom: 'from-green-500', gradientTo: 'to-emerald-500' },
-    { icon: User, value: '1,247', label: 'Visitors Today', gradientFrom: 'from-yellow-500', gradientTo: 'to-orange-500' }
-  ];
 
   const ADVANCED_SEARCH_FIELDS = [
     {
@@ -153,10 +219,6 @@ const Home: React.FC = () => {
     }
   ];
 
-  // Data
-  const featuredRecipes = mockRecipes.slice(0, 6);
-  const popularRecipes = mockRecipes.filter(recipe => recipe.rating >= 4.7).slice(0, 4);
-
   // CTA data
   const guestCTAData = {
     title: "Ready to Start Cooking?",
@@ -194,6 +256,8 @@ const Home: React.FC = () => {
             <div className="relative">
               <SearchBar 
                 onSearch={handleSearch} 
+                query={query}
+                setQuery={setQuery}
                 large={true}
                 placeholder={isMobile ? "Search..." : "Search by ingredients, recipe name, cuisine..."}
                 onAdvancedSearchToggle={() => setShowAdvancedSearch(!showAdvancedSearch)}
@@ -201,6 +265,15 @@ const Home: React.FC = () => {
                 showAdvancedSearch={showAdvancedSearch}
               />
             </div>
+
+            {/* Hidden file input for image search */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageFileChange}
+              className="hidden"
+            />
 
             {/* Search Buttons Container */}
             <div className="mt-6 ">
@@ -221,10 +294,10 @@ const Home: React.FC = () => {
               <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4">
                 <div className="hidden sm:block">
                   <SearchButton
-                    onClick={() => handleSearch('')}
+                    onClick={() => handleSearch(query)}
                     icon={Search}
-                    text={isSearching ? "Searching..." : "Search Recipes"}
-                    disabled={isSearching}
+                    text={isSearching ? "Searching..." : isImageSearching ? "Processing Image..." : "Search Recipes"}
+                    disabled={isSearching || isImageSearching || !query.trim()}
                   />
                 </div>
                 <SearchButton
@@ -232,7 +305,7 @@ const Home: React.FC = () => {
                   icon={Shuffle}
                   text={isLuckySearching ? "Finding Recipe..." : "I'm Feeling Lucky"}
                   variant="primary"
-                  disabled={isLuckySearching}
+                  disabled={isLuckySearching || isImageSearching}
                 />
               </div>
             </div>
@@ -295,15 +368,24 @@ const Home: React.FC = () => {
             <p className="text-gray-600 dark:text-gray-400">Join our growing community of food enthusiasts</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {STATS_DATA.map((stat, index) => (
-              <StatCard
-                key={index}
+            {statsData.map((stat, index) => (
+              <div key={index}>
+                {isLoadingStats ? (
+                  <div className="text-center p-6 bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse">
+                    <div className="w-16 h-16 bg-gray-300 dark:bg-gray-600 rounded-2xl mx-auto mb-4"></div>
+                    <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                  </div>
+                ) : (
+                  <StatCard
                 icon={stat.icon}
                 value={stat.value}
                 label={stat.label}
                 gradientFrom={stat.gradientFrom}
                 gradientTo={stat.gradientTo}
               />
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -329,15 +411,33 @@ const Home: React.FC = () => {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredRecipes.map((recipe) => (
-                <RecipeCard
-                  key={recipe.id}
-                  recipe={recipe}
-                  onClick={() => handleRecipeClick(recipe.id)}
-                />
-              ))}
-            </div>
+            {isLoadingFeatured ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, index) => (
+                  <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 animate-pulse">
+                    <div className="w-full h-48 bg-gray-300 dark:bg-gray-600 rounded-t-xl"></div>
+                    <div className="p-4">
+                      <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded mb-2"></div>
+                      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded mb-3"></div>
+                      <div className="flex justify-between">
+                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {featuredRecipes.map((recipe) => (
+                  <RecipeCard
+                    key={recipe.id}
+                    recipe={recipe}
+                    onClick={() => handleRecipeClick(recipe.id)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -353,15 +453,33 @@ const Home: React.FC = () => {
             <p className="text-gray-600 dark:text-gray-400">Most loved recipes by our community</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {popularRecipes.map((recipe) => (
-              <RecipeCard
-                key={recipe.id}
-                recipe={recipe}
-                onClick={() => handleRecipeClick(recipe.id)}
-              />
-            ))}
-          </div>
+          {isLoadingPopular ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, index) => (
+                <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 animate-pulse">
+                  <div className="w-full h-48 bg-gray-300 dark:bg-gray-600 rounded-t-xl"></div>
+                  <div className="p-4">
+                    <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded mb-3"></div>
+                    <div className="flex justify-between">
+                      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+                      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {popularRecipes.map((recipe) => (
+                <RecipeCard
+                  key={recipe.id}
+                  recipe={recipe}
+                  onClick={() => handleRecipeClick(recipe.id)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

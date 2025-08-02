@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
+  query?: string;
+  setQuery?: (query: string) => void;
   placeholder?: string;
   className?: string;
   large?: boolean;
@@ -15,6 +17,8 @@ interface SearchBarProps {
 
 const SearchBar: React.FC<SearchBarProps> = ({ 
   onSearch, 
+  query: externalQuery,
+  setQuery: setExternalQuery,
   placeholder = "Search for recipes...", 
   className = "",
   large = false,
@@ -22,7 +26,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onImageSearch,
   showAdvancedSearch = false
 }) => {
-  const [query, setQuery] = useState('');
+  const [internalQuery, setInternalQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -35,6 +39,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const suggestionRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Use external query if provided, otherwise use internal state
+  const query = externalQuery !== undefined ? externalQuery : internalQuery;
+  const setQuery = setExternalQuery || setInternalQuery;
 
   useEffect(() => {
     if (user) {
@@ -209,6 +217,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Don't search if query is empty
+    if (!query.trim()) {
+      return;
+    }
     
     // If a suggestion is selected, use it; otherwise use the current query
     const allSuggestions = query.trim() ? suggestions : searchHistory.slice(0, 5);
