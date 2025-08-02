@@ -59,7 +59,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
         {showLeftArrow && (
           <button
             onClick={scrollLeft}
-            className="absolute left-0 top-0 bottom-0 z-10 bg-gradient-to-r from-white to-transparent dark:from-gray-800 dark:to-transparent px-2 flex items-center"
+            className="absolute left-0 top-0 bottom-0 z-10 bg-gradient-to-r from-white via-white to-transparent dark:from-gray-800 dark:via-gray-800 dark:to-transparent pl-2 pr-4 flex items-center"
           >
             <ChevronLeft className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
           </button>
@@ -68,7 +68,11 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
         {/* Scrollable tabs container */}
         <div
           ref={scrollContainerRef}
-          className="flex overflow-x-auto scrollbar-hide px-4 sm:px-6"
+          className={`flex overflow-x-auto scrollbar-hide ${
+            showLeftArrow ? 'pl-8 sm:pl-10' : 'pl-4 sm:pl-6'
+          } ${
+            showRightArrow ? 'pr-8 sm:pr-10' : 'pr-4 sm:pr-6'
+          }`}
           onScroll={checkScrollButtons}
           style={{
             scrollbarWidth: 'none',
@@ -110,7 +114,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
         {showRightArrow && (
           <button
             onClick={scrollRight}
-            className="absolute right-0 top-0 bottom-0 z-10 bg-gradient-to-l from-white to-transparent dark:from-gray-800 dark:to-transparent px-2 flex items-center"
+            className="absolute right-0 top-0 bottom-0 z-10 bg-gradient-to-l from-white via-white to-transparent dark:from-gray-800 dark:via-gray-800 dark:to-transparent pr-2 pl-4 flex items-center"
           >
             <ChevronRight className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
           </button>

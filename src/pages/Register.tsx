@@ -18,6 +18,8 @@ const Register: React.FC = () => {
   const [profileImagePreview, setProfileImagePreview] = useState<string>('');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [isResendingCode, setIsResendingCode] = useState(false);
+  const [isSendingInitialCode, setIsSendingInitialCode] = useState(false);
   const { register } = useAuth();
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,7 +97,12 @@ const Register: React.FC = () => {
   };
 
   const handleVerifyNow = () => {
-    setStep('verify');
+    setIsSendingInitialCode(true);
+    // Simulate API call delay for sending verification code
+    setTimeout(() => {
+      setIsSendingInitialCode(false);
+      setStep('verify');
+    }, 1500);
   };
 
   const handleBrowseRecipes = () => {
@@ -115,6 +122,21 @@ const Register: React.FC = () => {
     try {
       const success = await register(fullName, email, password);
       if (success) {
+        // Mark user as verified since they completed email verification
+        const users = JSON.parse(localStorage.getItem('recipe_app_users') || '[]');
+        const userIndex = users.findIndex((user: any) => user.email === email);
+        if (userIndex !== -1) {
+          users[userIndex].isVerified = true;
+          localStorage.setItem('recipe_app_users', JSON.stringify(users));
+          
+          // Update current user
+          const currentUser = JSON.parse(localStorage.getItem('recipe_app_current_user') || '{}');
+          if (currentUser.email === email) {
+            currentUser.isVerified = true;
+            localStorage.setItem('recipe_app_current_user', JSON.stringify(currentUser));
+          }
+        }
+        
         // If profile image was uploaded, store it (in a real app, this would be uploaded to a server)
         if (profileImage && profileImagePreview) {
           const users = JSON.parse(localStorage.getItem('recipe_app_users') || '[]');
@@ -252,12 +274,18 @@ const Register: React.FC = () => {
             <div className="mt-6 text-center">
               <button
                 onClick={() => {
-                  const code = Math.floor(100000 + Math.random() * 900000).toString();
-                  setGeneratedCode(code);
+                  setIsResendingCode(true);
+                  // Simulate API call delay
+                  setTimeout(() => {
+                    setIsResendingCode(false);
+                    const code = Math.floor(100000 + Math.random() * 900000).toString();
+                    setGeneratedCode(code);
+                  }, 1500);
                 }}
+                disabled={isResendingCode}
                 className="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium transition-colors text-sm"
               >
-                Resend Code
+                {isResendingCode ? 'Sending Code...' : 'Resend Code'}
               </button>
             </div>
           </div>
@@ -321,9 +349,10 @@ const Register: React.FC = () => {
                 
                 <button
                   onClick={handleVerifyNow}
-                  className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
+                  disabled={isSendingInitialCode}
+                  className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Verify Now
+                  {isSendingInitialCode ? 'Sending Code...' : 'Verify Now'}
                 </button>
                 
                 <button
