@@ -484,7 +484,7 @@ const Home: React.FC = () => {
       </section>
 
       {/* Call to Action */}
-      <div className="bg-gray-100 dark:bg-gray-800/50">
+      <div className="py-4 bg-gradient-to-r from-orange-500/30 to-red-500/30 dark:bg-gray-800/50 dark:bg-none">
         <CTASection {...(user ? userCTAData : guestCTAData)} />
       </div>
       

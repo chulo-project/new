@@ -16,9 +16,9 @@ interface CTASectionProps {
 
 const CTASection: React.FC<CTASectionProps> = ({ title, description, buttons }) => {
   return (
-    <section className="py-12 px-4 sm:px-6 lg:px-8">
+    <section className="py-4 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto text-center">
-        <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-8 md:p-12">
+        <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-8 md:p-4">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             {title}
           </h2>

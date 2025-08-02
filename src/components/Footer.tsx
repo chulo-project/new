@@ -6,6 +6,16 @@ const Footer: React.FC = () => {
   const [email, setEmail] = React.useState('');
   const [isSubscribing, setIsSubscribing] = React.useState(false);
   const [subscriptionMessage, setSubscriptionMessage] = React.useState('');
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleNewsletterSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,6 +24,11 @@ const Footer: React.FC = () => {
     setIsSubscribing(true);
     setSubscriptionMessage('');
 
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
     try {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -21,15 +36,25 @@ const Footer: React.FC = () => {
       // Simulate success
       setSubscriptionMessage('Thank you for subscribing! Check your email for confirmation.');
       setEmail('');
+      
+      // Clear the message after 5 seconds
+      timeoutRef.current = setTimeout(() => {
+        setSubscriptionMessage('');
+      }, 5000);
     } catch (error) {
       setSubscriptionMessage('Something went wrong. Please try again.');
+      
+      // Clear error message after 5 seconds as well
+      timeoutRef.current = setTimeout(() => {
+        setSubscriptionMessage('');
+      }, 5000);
     } finally {
       setIsSubscribing(false);
     }
   };
 
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand Section */}
@@ -42,11 +67,11 @@ const Footer: React.FC = () => {
                 RecipeFind
               </span>
             </div>
-            <p className="text-gray-400 mb-4 leading-relaxed">
+            <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
               Discover, cook, and share amazing recipes with our community of food enthusiasts. 
               Your culinary journey starts here.
             </p>
-            <div className="flex items-center space-x-1 text-gray-400">
+            <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-400">
               <span>Made with</span>
               <Heart className="w-4 h-4 text-red-500 fill-current" />
               <span>for food lovers</span>
@@ -55,30 +80,30 @@ const Footer: React.FC = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <a href="/" className="text-gray-400 hover:text-orange-400 transition-colors">
+                <a href="/" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                   Home
                 </a>
               </li>
               <li>
-                <a href="/search" className="text-gray-400 hover:text-orange-400 transition-colors">
+                <a href="/search" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                   Browse Recipes
                 </a>
               </li>
               <li>
-                <a href="/categories" className="text-gray-400 hover:text-orange-400 transition-colors">
+                <a href="/categories" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                   Categories
                 </a>
               </li>
               <li>
-                <a href="/about" className="text-gray-400 hover:text-orange-400 transition-colors">
+                <a href="/about" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                   About Us
                 </a>
               </li>
               <li>
-                <a href="/blog" className="text-gray-400 hover:text-orange-400 transition-colors">
+                <a href="/blog" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                   Blog
                 </a>
               </li>
@@ -87,30 +112,30 @@ const Footer: React.FC = () => {
 
           {/* Support */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Support</h3>
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Support</h3>
             <ul className="space-y-2">
               <li>
-                <a href="/help" className="text-gray-400 hover:text-orange-400 transition-colors">
+                <a href="/help" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                   Help Center
                 </a>
               </li>
               <li>
-                <a href="/contact" className="text-gray-400 hover:text-orange-400 transition-colors">
+                <a href="/contact" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                   Contact Us
                 </a>
               </li>
               <li>
-                <a href="/faq" className="text-gray-400 hover:text-orange-400 transition-colors">
+                <a href="/faq" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                   FAQ
                 </a>
               </li>
               <li>
-                <a href="/privacy" className="text-gray-400 hover:text-orange-400 transition-colors">
+                <a href="/privacy" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                   Privacy Policy
                 </a>
               </li>
               <li>
-                <a href="/terms" className="text-gray-400 hover:text-orange-400 transition-colors">
+                <a href="/terms" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                   Terms of Service
                 </a>
               </li>
@@ -119,49 +144,49 @@ const Footer: React.FC = () => {
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Get in Touch</h3>
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Get in Touch</h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                <span className="text-gray-400">hello@recipefind.com</span>
+                <span className="text-gray-600 dark:text-gray-400">hello@recipefind.com</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                <span className="text-gray-400">+1 (555) 123-4567</span>
+                <span className="text-gray-600 dark:text-gray-400">+1 (555) 123-4567</span>
               </div>
               <div className="flex items-center space-x-3">
                 <MapPin className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                <span className="text-gray-400">San Francisco, CA</span>
+                <span className="text-gray-600 dark:text-gray-400">San Francisco, CA</span>
               </div>
             </div>
 
             {/* Social Media */}
             <div className="mt-6">
-              <h4 className="text-sm font-semibold mb-3">Follow Us</h4>
+              <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-white">Follow Us</h4>
               <div className="flex space-x-3">
                 <a
                   href="#"
-                  className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-orange-500 transition-colors"
+                  className="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-orange-500 dark:hover:bg-orange-500 transition-colors"
                 >
-                  <Facebook className="w-4 h-4" />
+                  <Facebook className="w-4 h-4 text-gray-900 dark:text-white" />
                 </a>
                 <a
                   href="#"
-                  className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-orange-500 transition-colors"
+                  className="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-orange-500 dark:hover:bg-orange-500 transition-colors"
                 >
-                  <Twitter className="w-4 h-4" />
+                  <Twitter className="w-4 h-4 text-gray-900 dark:text-white" />
                 </a>
                 <a
                   href="#"
-                  className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-orange-500 transition-colors"
+                  className="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-orange-500 dark:hover:bg-orange-500 transition-colors"
                 >
-                  <Instagram className="w-4 h-4" />
+                  <Instagram className="w-4 h-4 text-gray-900 dark:text-white" />
                 </a>
                 <a
                   href="#"
-                  className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-orange-500 transition-colors"
+                  className="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-lg flex items-center justify-center hover:bg-orange-500 dark:hover:bg-orange-500 transition-colors"
                 >
-                  <Youtube className="w-4 h-4" />
+                  <Youtube className="w-4 h-4 text-gray-900 dark:text-white" />
                 </a>
               </div>
             </div>
@@ -169,10 +194,10 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Newsletter Signup */}
-        <div className="border-t border-gray-800 mt-12 pt-8">
+        <div className="border-t border-gray-200 dark:border-gray-800 mt-12 pt-8">
           <div className="max-w-md mx-auto text-center">
-            <h3 className="text-lg font-semibold mb-2">Stay Updated</h3>
-            <p className="text-gray-400 mb-4">
+            <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Stay Updated</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               Subscribe to our newsletter for the latest recipes and cooking tips.
             </p>
             <form onSubmit={handleNewsletterSubscribe}>
@@ -182,7 +207,7 @@ const Footer: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
-                  className="w-full sm:flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-white placeholder-gray-400"
+                  className="w-full sm:flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   disabled={isSubscribing}
                   required
                 />
@@ -198,8 +223,8 @@ const Footer: React.FC = () => {
             {subscriptionMessage && (
               <div className={`mt-3 text-sm ${
                 subscriptionMessage.includes('Thank you') 
-                  ? 'text-green-400' 
-                  : 'text-red-400'
+                  ? 'text-green-600 dark:text-green-400' 
+                  : 'text-red-600 dark:text-red-400'
               }`}>
                 {subscriptionMessage}
               </div>
@@ -208,18 +233,18 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-400 text-sm">
+        <div className="border-t border-gray-200 dark:border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
             © {currentYear} RecipeFind. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="/privacy" className="text-gray-400 hover:text-orange-400 text-sm transition-colors">
+            <a href="/privacy" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 text-sm transition-colors">
               Privacy
             </a>
-            <a href="/terms" className="text-gray-400 hover:text-orange-400 text-sm transition-colors">
+            <a href="/terms" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 text-sm transition-colors">
               Terms
             </a>
-            <a href="/cookies" className="text-gray-400 hover:text-orange-400 text-sm transition-colors">
+            <a href="/cookies" className="text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 text-sm transition-colors">
               Cookies
             </a>
           </div>
