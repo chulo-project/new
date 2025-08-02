@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, User, Menu, X, Sun, Moon, LogOut } from 'lucide-react';
+import RecipeIcon from '../assets/recipe-icon.svg?react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -12,10 +13,32 @@ const Header: React.FC<HeaderProps> = ({ onSearchClick }) => {
   const { theme, toggleTheme } = useTheme();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isLoadingProfileImage, setIsLoadingProfileImage] = useState(false);
+  const [profileImageLoaded, setProfileImageLoaded] = useState(false);
 
   const isProfilePage = window.location.pathname === '/profile';
   const isHomePage = window.location.pathname === '/';
 
+  // Simulate API call to load profile image
+  React.useEffect(() => {
+    if (user && user.profilePicture && !profileImageLoaded) {
+      setIsLoadingProfileImage(true);
+      
+      // Simulate API delay for fetching profile image
+      const timer = setTimeout(() => {
+        setIsLoadingProfileImage(false);
+        setProfileImageLoaded(true);
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [user, profileImageLoaded]);
+
+  // Reset loading state when user changes
+  React.useEffect(() => {
+    setProfileImageLoaded(false);
+    setIsLoadingProfileImage(false);
+  }, [user?.id]);
   const handleProfileClick = () => {
     window.location.href = '/profile';
   };
@@ -52,7 +75,7 @@ const Header: React.FC<HeaderProps> = ({ onSearchClick }) => {
             onClick={handleHomeClick}
           >
             <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
-              <Search className="w-5 h-5 text-white" />
+              <RecipeIcon className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
               RecipeFind
@@ -81,19 +104,23 @@ const Header: React.FC<HeaderProps> = ({ onSearchClick }) => {
                   }}
                   className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
-                  {user.profilePicture ? (
+                  {user.profilePicture && !isLoadingProfileImage && profileImageLoaded ? (
                     <img
                       src={user.profilePicture}
                       alt={user.name}
                       className="w-8 h-8 rounded-full object-cover"
                     />
+                  ) : user.profilePicture && isLoadingProfileImage ? (
+                    <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 animate-pulse flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
                   ) : (
                     <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
                       <User className="w-4 h-4 text-white" />
                     </div>
                   )}
                   <span className="text-gray-700 dark:text-gray-300 font-medium">
-                    {user.name}
+                    {isLoadingProfileImage ? 'Loading...' : user.name}
                   </span>
                 </button>
 

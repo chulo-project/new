@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ChefHat, TrendingUp, Search, Shuffle, Filter, Camera, Users, BookOpen, MessageSquare, X, BarChart3, Star, User } from 'lucide-react';
+import { TrendingUp, Search, Shuffle, Filter, Camera, Users, BookOpen, MessageSquare, X, BarChart3, Star, User } from 'lucide-react';
+import RecipeIcon from '../assets/recipe-icon.svg?react';
 import Header from '../components/Header';
 import SearchBar from '../components/SearchBar';
 import RecipeCard from '../components/RecipeCard';
@@ -246,8 +247,8 @@ const Home: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-red-500/10 dark:from-orange-500/5 dark:to-red-500/5" />
         <div className="relative max-w-4xl mx-auto text-center w-full">
           <div className="flex justify-center mb-6">
-            <div className="p-4 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl">
-              <ChefHat className="w-12 h-12 text-white" />
+            <div className="p-6 bg-gradient-to-r from-orange-500 to-red-500 rounded-3xl shadow-lg">
+              <RecipeIcon className="w-16 h-16 text-white" />
             </div>
           </div>
           
