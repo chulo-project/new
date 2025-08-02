@@ -34,6 +34,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -66,6 +67,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
+      }
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
     };
   }, []);
@@ -123,6 +127,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
     setQuery(value);
     setSelectedIndex(-1);
     
+    // Clear existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
     // Abort previous request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -131,28 +140,34 @@ const SearchBar: React.FC<SearchBarProps> = ({
     if (value.trim()) {
       // Make API call for queries with 3 or more characters
       if (value.trim().length >= 3) {
-        const abortController = new AbortController();
-        abortControllerRef.current = abortController;
-        
+        // Set loading state immediately for better UX
         setIsLoadingSuggestions(true);
+        setSuggestions([]);
+        setShowSuggestions(true);
         
-        fetchSuggestions(value.trim(), abortController.signal)
-          .then(apiSuggestions => {
-            if (!abortController.signal.aborted) {
-              setSuggestions(apiSuggestions);
-              setIsLoadingSuggestions(false);
-              setShowSuggestions(apiSuggestions.length > 0);
-            }
-          })
-          .catch(error => {
-            if (!abortController.signal.aborted) {
-              console.error('Failed to fetch suggestions:', error);
-              // No fallback - no suggestions for failed API calls
-              setSuggestions([]);
-              setIsLoadingSuggestions(false);
-              setShowSuggestions(false);
-            }
-          });
+        // Debounce the API call
+        debounceTimerRef.current = setTimeout(() => {
+          const abortController = new AbortController();
+          abortControllerRef.current = abortController;
+          
+          fetchSuggestions(value.trim(), abortController.signal)
+            .then(apiSuggestions => {
+              if (!abortController.signal.aborted) {
+                setSuggestions(apiSuggestions);
+                setIsLoadingSuggestions(false);
+                setShowSuggestions(apiSuggestions.length > 0);
+              }
+            })
+            .catch(error => {
+              if (!abortController.signal.aborted) {
+                console.error('Failed to fetch suggestions:', error);
+                // No fallback - no suggestions for failed API calls
+                setSuggestions([]);
+                setIsLoadingSuggestions(false);
+                setShowSuggestions(false);
+              }
+            });
+        }, 300); // 300ms debounce delay
       } else if (value.trim().length > 0 && value.trim().length < 3) {
         // For 1-2 character queries, show no suggestions
         setSuggestions([]);
@@ -165,13 +180,19 @@ const SearchBar: React.FC<SearchBarProps> = ({
         setIsLoadingSuggestions(false);
       }
     } else {
+      // Clear loading state for empty queries
+      setIsLoadingSuggestions(false);
       setSuggestions([]);
       setShowSuggestions(user && searchHistory.length > 0);
-      setIsLoadingSuggestions(false);
     }
   };
 
   const handleSearch = (searchQuery: string) => {
+    // Clear debounce timer when search is executed
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
     // Abort any pending API calls
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -234,6 +255,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
         });
         break;
       case 'Escape':
+        // Clear debounce timer
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        
         // Abort any pending API calls
         if (abortControllerRef.current) {
           abortControllerRef.current.abort();
@@ -290,6 +316,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   const clearSearch = () => {
+    // Clear debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
     // Abort any pending API calls
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
