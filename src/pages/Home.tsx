@@ -270,12 +270,11 @@ const Home: React.FC = () => {
                       <button
                         onClick={() => {
                           setShowAdvancedSearch(false);
-                          handleSearch('');
                         }}
                         className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium disabled:opacity-50"
                         disabled={isSearching}
                       >
-                        {isSearching ? 'Applying...' : 'Apply Filters'}
+                       Apply Filters
                       </button>
                     </div>
                   </div>
@@ -286,7 +285,7 @@ const Home: React.FC = () => {
       </section>
 
       {/* Quick Stats */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
+      <section className="py-8 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-left">
             <div className="flex items-center space-x-3 mb-4">
@@ -312,7 +311,7 @@ const Home: React.FC = () => {
 
       {/* Featured Recipes - Only for logged in users */}
       {user && (
-        <section className="py-12 px-4 sm:px-6 lg:px-8">
+        <section className="py-8 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
             <div className="mb-12 text-left">
               <div className="flex items-center space-x-3 mb-4">
@@ -344,7 +343,7 @@ const Home: React.FC = () => {
       )}
 
       {/* Popular This Week */}
-      <section className="py-4 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
+      <section className="py-8 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 text-left">
             <div className="flex items-center space-x-3 mb-4">

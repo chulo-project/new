@@ -11,7 +11,7 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ icon: Icon, value, label, gradientFrom, gradientTo }) => {
   return (
-    <div className="text-center p-6 bg-gray-50 dark:bg-gray-700 rounded-2xl">
+    <div className="text-center p-6 bg-gray-200 dark:bg-gray-700 rounded-2xl">
       <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r ${gradientFrom} ${gradientTo} rounded-2xl mb-4`}>
         <Icon className="w-8 h-8 text-white" />
       </div>
