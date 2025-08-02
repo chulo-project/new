@@ -72,21 +72,36 @@ const Register: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Check if email already exists
-      const existingUser = localStorage.getItem('recipe_app_users');
-      const users = existingUser ? JSON.parse(existingUser) : [];
-      const emailExists = users.some((user: any) => user.email === email);
-      
-      if (emailExists) {
-        setError('An account with this email already exists');
-        setRegistrationSuccess(false);
-      } else {
+      // Actually register the user immediately
+      const success = await register(fullName, email, password);
+      if (success) {
+        // Add profile image if uploaded
+        if (profileImage && profileImagePreview) {
+          const users = JSON.parse(localStorage.getItem('recipe_app_users') || '[]');
+          const userIndex = users.findIndex((user: any) => user.email === email);
+          if (userIndex !== -1) {
+            users[userIndex].profilePicture = profileImagePreview;
+            localStorage.setItem('recipe_app_users', JSON.stringify(users));
+            
+            // Update current user
+            const currentUser = JSON.parse(localStorage.getItem('recipe_app_current_user') || '{}');
+            if (currentUser.email === email) {
+              currentUser.profilePicture = profileImagePreview;
+              localStorage.setItem('recipe_app_current_user', JSON.stringify(currentUser));
+            }
+          }
+        }
+        
         setRegistrationSuccess(true);
-        // Generate verification code
+        // Generate verification code for optional verification
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         setGeneratedCode(code);
+        setStep('feedback');
+      } else {
+        setError('An account with this email already exists');
+        setRegistrationSuccess(false);
+        setStep('feedback');
       }
-      setStep('feedback');
     } catch (err) {
       setError('An error occurred. Please try again.');
       setRegistrationSuccess(false);
@@ -106,6 +121,7 @@ const Register: React.FC = () => {
   };
 
   const handleBrowseRecipes = () => {
+    // User is already logged in at this point, just redirect
     window.location.href = '/';
   };
 
@@ -120,43 +136,21 @@ const Register: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const success = await register(fullName, email, password);
-      if (success) {
-        // Mark user as verified since they completed email verification
-        const users = JSON.parse(localStorage.getItem('recipe_app_users') || '[]');
-        const userIndex = users.findIndex((user: any) => user.email === email);
-        if (userIndex !== -1) {
-          users[userIndex].isVerified = true;
-          localStorage.setItem('recipe_app_users', JSON.stringify(users));
-          
-          // Update current user
-          const currentUser = JSON.parse(localStorage.getItem('recipe_app_current_user') || '{}');
-          if (currentUser.email === email) {
-            currentUser.isVerified = true;
-            localStorage.setItem('recipe_app_current_user', JSON.stringify(currentUser));
-          }
-        }
+      // User is already registered, just mark as verified
+      const users = JSON.parse(localStorage.getItem('recipe_app_users') || '[]');
+      const userIndex = users.findIndex((user: any) => user.email === email);
+      if (userIndex !== -1) {
+        users[userIndex].isVerified = true;
+        localStorage.setItem('recipe_app_users', JSON.stringify(users));
         
-        // If profile image was uploaded, store it (in a real app, this would be uploaded to a server)
-        if (profileImage && profileImagePreview) {
-          const users = JSON.parse(localStorage.getItem('recipe_app_users') || '[]');
-          const userIndex = users.findIndex((user: any) => user.email === email);
-          if (userIndex !== -1) {
-            users[userIndex].profilePicture = profileImagePreview;
-            localStorage.setItem('recipe_app_users', JSON.stringify(users));
-            
-            // Update current user
-            const currentUser = JSON.parse(localStorage.getItem('recipe_app_current_user') || '{}');
-            if (currentUser.email === email) {
-              currentUser.profilePicture = profileImagePreview;
-              localStorage.setItem('recipe_app_current_user', JSON.stringify(currentUser));
-            }
-          }
+        // Update current user
+        const currentUser = JSON.parse(localStorage.getItem('recipe_app_current_user') || '{}');
+        if (currentUser.email === email) {
+          currentUser.isVerified = true;
+          localStorage.setItem('recipe_app_current_user', JSON.stringify(currentUser));
         }
-        setStep('success');
-      } else {
-        setError('Registration failed. Please try again.');
       }
+      setStep('success');
     } catch (err) {
       setError('An error occurred. Please try again.');
     } finally {
