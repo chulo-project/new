@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, ArrowLeft, User, Mail, Lock, CheckCircle, Key } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, User, Mail, Lock, CheckCircle, Key, Upload, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Register: React.FC = () => {
-  const [name, setName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -11,14 +11,51 @@ const Register: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<'register' | 'verify' | 'success'>('register');
+  const [step, setStep] = useState<'register' | 'feedback' | 'verify' | 'success'>('register');
   const [error, setError] = useState('');
   const [generatedCode, setGeneratedCode] = useState('');
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [profileImagePreview, setProfileImagePreview] = useState<string>('');
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const { register } = useAuth();
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        setError('Profile image must be less than 5MB');
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        setError('Please select a valid image file');
+        return;
+      }
+
+      setProfileImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfileImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      setError('');
+    }
+  };
+
+  const removeProfileImage = () => {
+    setProfileImage(null);
+    setProfileImagePreview('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!agreeToTerms) {
+      setError('Please agree to the Terms of Service and Privacy Policy');
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -40,17 +77,29 @@ const Register: React.FC = () => {
       
       if (emailExists) {
         setError('An account with this email already exists');
+        setRegistrationSuccess(false);
       } else {
+        setRegistrationSuccess(true);
         // Generate verification code
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         setGeneratedCode(code);
-        setStep('verify');
       }
+      setStep('feedback');
     } catch (err) {
       setError('An error occurred. Please try again.');
+      setRegistrationSuccess(false);
+      setStep('feedback');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleVerifyNow = () => {
+    setStep('verify');
+  };
+
+  const handleBrowseRecipes = () => {
+    window.location.href = '/';
   };
 
   const handleVerificationSubmit = async (e: React.FormEvent) => {
@@ -64,8 +113,24 @@ const Register: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const success = await register(name, email, password);
+      const success = await register(fullName, email, password);
       if (success) {
+        // If profile image was uploaded, store it (in a real app, this would be uploaded to a server)
+        if (profileImage && profileImagePreview) {
+          const users = JSON.parse(localStorage.getItem('recipe_app_users') || '[]');
+          const userIndex = users.findIndex((user: any) => user.email === email);
+          if (userIndex !== -1) {
+            users[userIndex].profilePicture = profileImagePreview;
+            localStorage.setItem('recipe_app_users', JSON.stringify(users));
+            
+            // Update current user
+            const currentUser = JSON.parse(localStorage.getItem('recipe_app_current_user') || '{}');
+            if (currentUser.email === email) {
+              currentUser.profilePicture = profileImagePreview;
+              localStorage.setItem('recipe_app_current_user', JSON.stringify(currentUser));
+            }
+          }
+        }
         setStep('success');
       } else {
         setError('Registration failed. Please try again.');
@@ -100,7 +165,7 @@ const Register: React.FC = () => {
             </h2>
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border dark:border-gray-700">
               <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">
-                Your account has been created successfully. You're now ready to discover amazing recipes!
+                Your account has been created and verified successfully. You're now ready to discover amazing recipes!
               </p>
               <button
                 onClick={() => window.location.href = '/'}
@@ -121,7 +186,7 @@ const Register: React.FC = () => {
         <div className="max-w-md w-full space-y-8">
           {/* Back Button */}
           <button
-            onClick={() => setStep('register')}
+            onClick={() => setStep('feedback')}
             className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -201,6 +266,100 @@ const Register: React.FC = () => {
     );
   }
 
+  if (step === 'feedback') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          {/* Back Button */}
+          <button
+            onClick={() => setStep('register')}
+            className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back</span>
+          </button>
+
+          {/* Header */}
+          <div className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
+                registrationSuccess 
+                  ? 'bg-green-500' 
+                  : 'bg-red-500'
+              }`}>
+                {registrationSuccess ? (
+                  <CheckCircle className="w-8 h-8 text-white" />
+                ) : (
+                  <X className="w-8 h-8 text-white" />
+                )}
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+              {registrationSuccess ? 'Registration Successful!' : 'Registration Failed'}
+            </h2>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">
+              {registrationSuccess 
+                ? 'Your account has been created. Choose how to proceed.'
+                : 'There was an issue creating your account.'
+              }
+            </p>
+          </div>
+
+          {/* Content */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border dark:border-gray-700">
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+                <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+              </div>
+            )}
+
+            {registrationSuccess ? (
+              <div className="space-y-4">
+                <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+                  To complete your registration and unlock all features, please verify your email address.
+                </p>
+                
+                <button
+                  onClick={handleVerifyNow}
+                  className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
+                >
+                  Verify Now
+                </button>
+                
+                <button
+                  onClick={handleBrowseRecipes}
+                  className="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 font-medium"
+                >
+                  Browse Recipes
+                </button>
+                
+                <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                  You can verify your email later from your profile settings
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <button
+                  onClick={() => setStep('register')}
+                  className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
+                >
+                  Try Again
+                </button>
+                
+                <button
+                  onClick={handleLoginClick}
+                  className="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 font-medium"
+                >
+                  Sign In Instead
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -239,18 +398,66 @@ const Register: React.FC = () => {
               </div>
             )}
 
+            {/* Profile Image Upload */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Profile Image (Optional)
+              </label>
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  {profileImagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={profileImagePreview}
+                        alt="Profile preview"
+                        className="w-16 h-16 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeProfileImage}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                      <User className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <div className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                      <Upload className="w-4 h-4" />
+                      <span className="text-sm">Upload Photo</span>
+                    </div>
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Max 5MB, JPG/PNG
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Full Name
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
-                  id="name"
+                  id="fullName"
                   type="text"
                   required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   placeholder="Enter your full name"
                 />
@@ -325,11 +532,13 @@ const Register: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center">
+            <div className="flex items-start">
               <input
                 type="checkbox"
                 required
-                className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                checked={agreeToTerms}
+                onChange={(e) => setAgreeToTerms(e.target.checked)}
+                className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mt-1"
               />
               <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
                 I agree to the{' '}
