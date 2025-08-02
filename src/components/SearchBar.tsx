@@ -33,7 +33,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionRef = useRef<HTMLDivElement>(null);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -64,88 +64,117 @@ const SearchBar: React.FC<SearchBarProps> = ({
   // Cleanup debounce timeout on unmount
   useEffect(() => {
     return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
     };
   }, []);
 
-  // Fake API call to fetch suggestions
-  const fetchSuggestions = async (searchQuery: string): Promise<string[]> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
-    
-    // Simulate API response with enhanced suggestions
-    const mockApiSuggestions = getSearchSuggestions(searchQuery);
-    
-    // Add some fake API-like suggestions
-    const apiEnhancedSuggestions = [
-      ...mockApiSuggestions,
-      ...(searchQuery.length >= 3 ? [
-        `${searchQuery} recipe`,
-        `best ${searchQuery}`,
-        `easy ${searchQuery}`,
-        `healthy ${searchQuery}`
-      ].filter(s => !mockApiSuggestions.includes(s)) : [])
-    ];
-    
-    return apiEnhancedSuggestions.slice(0, 8);
+  // Enhanced API call to fetch suggestions
+  const fetchSuggestions = async (searchQuery: string, signal?: AbortSignal): Promise<string[]> => {
+    try {
+      // Enhanced API suggestions with better logic
+      const baseSuggestions = getSearchSuggestions(searchQuery);
+      
+      // Generate contextual suggestions based on query
+      const contextualSuggestions: string[] = [];
+      
+      if (searchQuery.length >= 2) {
+        // Add recipe-specific suggestions
+        contextualSuggestions.push(
+          `${searchQuery} recipe`,
+          `best ${searchQuery}`,
+          `easy ${searchQuery}`,
+          `healthy ${searchQuery}`,
+          `quick ${searchQuery}`,
+          `${searchQuery} ingredients`
+        );
+      }
+      
+      // Combine and deduplicate suggestions
+      const allSuggestions = [
+        ...baseSuggestions,
+        ...contextualSuggestions.filter(s => 
+          !baseSuggestions.some(base => 
+            base.toLowerCase().includes(s.toLowerCase()) || 
+            s.toLowerCase().includes(base.toLowerCase())
+          )
+        )
+      ];
+      
+      // Check if request was aborted
+      if (signal?.aborted) {
+        throw new Error('Request aborted');
+      }
+      
+      return allSuggestions.slice(0, 8);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw error;
+      }
+      // Fallback to basic suggestions on error
+      return getSearchSuggestions(searchQuery).slice(0, 6);
+    }
   };
+
   const handleInputChange = (value: string) => {
-    const wasKeyboardNavigation = isKeyboardNavigation;
     setIsKeyboardNavigation(false);
     
     setQuery(value);
     setSelectedIndex(-1);
     
-    // Clear existing debounce timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
+    // Abort previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
     
     if (value.trim()) {
-      // Only make API call if this wasn't triggered by keyboard navigation
-      // and the query is at least 3 characters
-      if (!wasKeyboardNavigation && value.trim().length >= 3) {
+      // Make API call for queries with 3 or more characters
+      if (value.trim().length >= 3) {
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+        
         setIsLoadingSuggestions(true);
         
-        // Debounce the API call
-        debounceTimeoutRef.current = setTimeout(async () => {
-          try {
-            const apiSuggestions = await fetchSuggestions(value.trim());
-            setSuggestions(apiSuggestions);
-            setIsLoadingSuggestions(false);
-            setShowSuggestions(true);
-          } catch (error) {
-            console.error('Failed to fetch suggestions:', error);
-            // Fallback to local suggestions
-            const fallbackSuggestions = getSearchSuggestions(value);
-            setSuggestions(fallbackSuggestions);
-            setIsLoadingSuggestions(false);
-            setShowSuggestions(true);
-          }
-        }, 300); // 300ms debounce
-      } else if (!wasKeyboardNavigation && value.trim().length < 3) {
-        // For queries less than 3 characters, use local suggestions immediately
-        const localSuggestions = getSearchSuggestions(value);
-        setSuggestions(localSuggestions);
-        setShowSuggestions(localSuggestions.length > 0);
+        fetchSuggestions(value.trim(), abortController.signal)
+          .then(apiSuggestions => {
+            if (!abortController.signal.aborted) {
+              setSuggestions(apiSuggestions);
+              setIsLoadingSuggestions(false);
+              setShowSuggestions(apiSuggestions.length > 0);
+            }
+          })
+          .catch(error => {
+            if (!abortController.signal.aborted) {
+              console.error('Failed to fetch suggestions:', error);
+              // No fallback - no suggestions for failed API calls
+              setSuggestions([]);
+              setIsLoadingSuggestions(false);
+              setShowSuggestions(false);
+            }
+          });
+      } else if (value.trim().length > 0 && value.trim().length < 3) {
+        // For 1-2 character queries, show no suggestions
+        setSuggestions([]);
+        setShowSuggestions(false);
         setIsLoadingSuggestions(false);
-      } else if (wasKeyboardNavigation) {
-        // Don't change suggestions during keyboard navigation
-        setShowSuggestions(suggestions.length > 0);
+      } else {
+        // This shouldn't happen since we're inside if (value.trim())
+        setSuggestions([]);
+        setShowSuggestions(false);
+        setIsLoadingSuggestions(false);
       }
     } else {
       setSuggestions([]);
-      setShowSuggestions(searchHistory.length > 0);
+      setShowSuggestions(user && searchHistory.length > 0);
       setIsLoadingSuggestions(false);
     }
   };
 
   const handleSearch = (searchQuery: string) => {
-    // Clear any pending API calls
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
+    // Abort any pending API calls
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
     setIsLoadingSuggestions(false);
     
@@ -205,9 +234,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
         });
         break;
       case 'Escape':
-        // Clear any pending API calls
-        if (debounceTimeoutRef.current) {
-          clearTimeout(debounceTimeoutRef.current);
+        // Abort any pending API calls
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
         }
         setIsLoadingSuggestions(false);
         setShowSuggestions(false);
@@ -224,27 +253,46 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
   const handleFocus = () => {
     setSelectedIndex(-1);
-    if (query.trim()) {
-      if (query.trim().length >= 3 && suggestions.length === 0 && !isLoadingSuggestions) {
-        // Trigger API call if we don't have suggestions yet
+    if (!query.trim()) {
+      // Show search history only if user is logged in and has history
+      setShowSuggestions(user && searchHistory.length > 0);
+    } else if (query.trim().length >= 3) {
+      // For queries with 3+ characters, fetch suggestions if not already loaded
+      if (suggestions.length === 0 && !isLoadingSuggestions) {
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+        
         setIsLoadingSuggestions(true);
-        fetchSuggestions(query.trim()).then(apiSuggestions => {
-          setSuggestions(apiSuggestions);
-          setIsLoadingSuggestions(false);
-        }).catch(() => {
-          const fallbackSuggestions = getSearchSuggestions(query);
-          setSuggestions(fallbackSuggestions);
-          setIsLoadingSuggestions(false);
-        });
+        
+        fetchSuggestions(query.trim(), abortController.signal)
+          .then(apiSuggestions => {
+            if (!abortController.signal.aborted) {
+              setSuggestions(apiSuggestions);
+              setIsLoadingSuggestions(false);
+              setShowSuggestions(apiSuggestions.length > 0);
+            }
+          })
+          .catch(error => {
+            if (!abortController.signal.aborted) {
+              setSuggestions([]);
+              setIsLoadingSuggestions(false);
+              setShowSuggestions(false);
+            }
+          });
+      } else if (suggestions.length > 0) {
+        setShowSuggestions(true);
       }
+    } else {
+      // For 1-2 character queries, hide suggestions
+      setShowSuggestions(false);
+      setSuggestions([]);
     }
-    setShowSuggestions(query.trim() ? suggestions.length > 0 : searchHistory.length > 0);
   };
 
   const clearSearch = () => {
-    // Clear any pending API calls
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
+    // Abort any pending API calls
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
     setIsLoadingSuggestions(false);
     setQuery('');
@@ -388,9 +436,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
           {!query.trim() && searchHistory.length > 0 && (
             <div className="p-2">
-              <div className="text-xs font-medium text-gray-500 dark:text-gray-400 px-3 py-2">
-                Recent Searches
-              </div>
               {searchHistory.slice(0, 5).map((historyItem, index) => (
                 <button
                   key={index}
