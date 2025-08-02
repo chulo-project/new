@@ -4,7 +4,7 @@ import { DivideIcon as LucideIcon, ChevronLeft, ChevronRight } from 'lucide-reac
 interface Tab {
   id: string;
   name: string;
-  icon: LucideIcon;
+  icon: typeof LucideIcon;
   count?: number;
 }
 
@@ -52,6 +52,25 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
     }
   };
 
+  const scrollToTab = (tabId: string) => {
+    if (scrollContainerRef.current) {
+      const tabElement = scrollContainerRef.current.querySelector(`[data-tab-id="${tabId}"]`) as HTMLElement;
+      if (tabElement) {
+        const container = scrollContainerRef.current;
+        const containerRect = container.getBoundingClientRect();
+        const tabRect = tabElement.getBoundingClientRect();
+        
+        // Calculate the scroll position to center the tab
+        const scrollLeft = container.scrollLeft + tabRect.left - containerRect.left - (containerRect.width / 2) + (tabRect.width / 2);
+        
+        container.scrollTo({
+          left: scrollLeft,
+          behavior: 'smooth'
+        });
+      }
+    }
+  };
+
   return (
     <div className={`relative ${className}`}>
       <div className="border-b dark:border-gray-700">
@@ -85,7 +104,11 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
               return (
                 <button
                   key={tab.id}
-                  onClick={() => onTabChange(tab.id)}
+                  data-tab-id={tab.id}
+                  onClick={() => {
+                    onTabChange(tab.id);
+                    scrollToTab(tab.id);
+                  }}
                   className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap px-2 ${
                     activeTab === tab.id
                       ? 'border-orange-500 text-orange-600 dark:text-orange-400'

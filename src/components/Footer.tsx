@@ -1,12 +1,15 @@
 import React from 'react';
-import { ChefHat, Heart, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
+import { Heart, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
+import RecipeIcon from '../assets/recipe-icon.svg?react';
+
+
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = React.useState('');
   const [isSubscribing, setIsSubscribing] = React.useState(false);
   const [subscriptionMessage, setSubscriptionMessage] = React.useState('');
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = React.useRef<number | null>(null);
 
   // Cleanup timeout on unmount
   React.useEffect(() => {
@@ -61,7 +64,7 @@ const Footer: React.FC = () => {
           <div className="lg:col-span-1">
             <div className="flex items-center space-x-2 mb-4">
               <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
-                <ChefHat className="w-5 h-5 text-white" />
+                <RecipeIcon className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
                 RecipeFind

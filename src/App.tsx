@@ -8,6 +8,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import SearchResults from './pages/SearchResults';
 import Profile from './pages/Profile';
 import RecipePage from './pages/RecipePage';
+import VerifyEmail from './pages/VerifyEmail';
 
 function App() {
   const path = window.location.pathname;
@@ -26,6 +27,8 @@ function App() {
         return <Profile />;
       case '/recipe':
         return <RecipePage />;
+      case '/verify-email':
+        return <VerifyEmail />;
       default:
         if (path.startsWith('/recipe/')) {
           return <RecipePage />;

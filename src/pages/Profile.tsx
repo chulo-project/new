@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Mail, Calendar, Camera, Trash2, History, Heart, Bookmark, ArrowLeft, Key, CheckCircle, Shield, ShieldCheck, MessageSquare, BookOpen, Star, Plus } from 'lucide-react';
+import { User, Mail, Calendar, Camera, Trash2, History, Heart, Bookmark, Key, CheckCircle, Shield, ShieldCheck, MessageSquare, BookOpen, Star, Plus, AlertTriangle, X } from 'lucide-react';
 import Header from '../components/Header';
 import RecipeCard from '../components/RecipeCard';
 import TabNavigation from '../components/TabNavigation';
+import Breadcrumb from '../components/Breadcrumb';
 import { useAuth } from '../context/AuthContext';
 import { getRecipeById } from '../data/mockRecipes';
 
 const Profile: React.FC = () => {
-  const { user, updateProfile, requestVerification } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'favorites' | 'saved' | 'history' | 'reviews' | 'posted'>('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [editingField, setEditingField] = useState<'name' | 'email' | 'password' | null>(null);
@@ -18,7 +19,7 @@ const Profile: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
-  const [isRequestingVerification, setIsRequestingVerification] = useState(false);
+  const [isRequestingVerification] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -32,6 +33,10 @@ const Profile: React.FC = () => {
   const [isLoadingPosted, setIsLoadingPosted] = useState(true);
   const [isDeletingHistoryItem, setIsDeletingHistoryItem] = useState<number | null>(null);
   const [isClearingHistory, setIsClearingHistory] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteEmail, setDeleteEmail] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [favoriteRecipes, setFavoriteRecipes] = useState<typeof import('../data/mockRecipes').mockRecipes>([]);
   const [savedRecipes, setSavedRecipes] = useState<typeof import('../data/mockRecipes').mockRecipes>([]);
@@ -48,7 +53,7 @@ const Profile: React.FC = () => {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1200));
       
-      const recipes = user.favoriteRecipes.map(id => getRecipeById(id)).filter(Boolean);
+      const recipes = user.favoriteRecipes.map(id => getRecipeById(id)).filter((recipe): recipe is typeof import('../data/mockRecipes').mockRecipes[0] => recipe !== undefined);
       setFavoriteRecipes(recipes);
       setIsLoadingFavorites(false);
     };
@@ -65,7 +70,7 @@ const Profile: React.FC = () => {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const recipes = user.savedRecipes.map(id => getRecipeById(id)).filter(Boolean);
+      const recipes = user.savedRecipes.map(id => getRecipeById(id)).filter((recipe): recipe is typeof import('../data/mockRecipes').mockRecipes[0] => recipe !== undefined);
       setSavedRecipes(recipes);
       setIsLoadingSaved(false);
     };
@@ -112,13 +117,48 @@ const Profile: React.FC = () => {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1100));
       
-      const recipes = user.postedRecipes.map(id => getRecipeById(id)).filter(Boolean);
+      const recipes = user.postedRecipes.map(id => getRecipeById(id)).filter((recipe): recipe is typeof import('../data/mockRecipes').mockRecipes[0] => recipe !== undefined);
       setPostedRecipes(recipes);
       setIsLoadingPosted(false);
     };
 
     loadPosted();
   }, [user]);
+
+  // Reset delete modal state when user changes
+  useEffect(() => {
+    if (!user) {
+      setShowDeleteModal(false);
+      setDeleteEmail('');
+      setDeleteError('');
+    }
+  }, [user]);
+
+  // Handle escape key to close delete modal
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showDeleteModal) {
+        setShowDeleteModal(false);
+        setDeleteEmail('');
+        setDeleteError('');
+      }
+    };
+
+    if (showDeleteModal) {
+      document.addEventListener('keydown', handleEscapeKey);
+      return () => document.removeEventListener('keydown', handleEscapeKey);
+    }
+  }, [showDeleteModal]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (showDeleteModal) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [showDeleteModal]);
   
   if (!user) {
     return (
@@ -245,6 +285,10 @@ const Profile: React.FC = () => {
     updateProfile({
       profilePicture: undefined
     });
+    // Reset file input value to allow re-uploading the same file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const deleteSearchHistoryItem = (index: number) => {
@@ -290,28 +334,56 @@ const Profile: React.FC = () => {
     window.location.href = `/recipe/${recipeId}`;
   };
 
-  const handleBackClick = () => {
-    window.location.href = '/';
+  const handleRequestVerification = async () => {
+    window.location.href = '/verify-email';
   };
 
-  const handleRequestVerification = async () => {
-    setIsRequestingVerification(true);
-    try {
-      await requestVerification();
-    } catch (error) {
-      console.error('Verification request failed:', error);
-    } finally {
-      setIsRequestingVerification(false);
+  const handleDeleteAccount = () => {
+    setShowDeleteModal(true);
+    setDeleteEmail('');
+    setDeleteError('');
+  };
+
+  const handleDeleteAccountConfirm = async () => {
+    if (deleteEmail !== user?.email) {
+      setDeleteError('Email does not match your account email');
+      return;
     }
+
+    setIsDeletingAccount(true);
+    setDeleteError('');
+
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // In a real app, you would call the API to delete the account
+      // For demo purposes, we'll clear local storage and redirect
+      localStorage.removeItem('recipe_app_current_user');
+      localStorage.removeItem('recipe_app_users');
+      
+      // Redirect to home page
+      window.location.href = '/';
+    } catch (err) {
+      setDeleteError('An error occurred. Please try again.');
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
+  const handleDeleteAccountCancel = () => {
+    setShowDeleteModal(false);
+    setDeleteEmail('');
+    setDeleteError('');
   };
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: User },
-    { id: 'favorites', name: 'Favorites', icon: Heart, count: favoriteRecipes.length },
-    { id: 'saved', name: 'Saved', icon: Bookmark, count: savedRecipes.length },
-    { id: 'history', name: 'Search History', icon: History, count: user.searchHistory.length },
-    { id: 'reviews', name: 'Reviews', icon: MessageSquare, count: user.reviews?.length || 0 },
-    { id: 'posted', name: 'Posted Recipes', icon: BookOpen, count: user.postedRecipes?.length || 0 }
+    { id: 'favorites', name: 'Favorites', icon: Heart },
+    { id: 'saved', name: 'Saved', icon: Bookmark },
+    { id: 'history', name: 'Search History', icon: History },
+    { id: 'reviews', name: 'Reviews', icon: MessageSquare },
+    { id: 'posted', name: 'Posted Recipes', icon: BookOpen }
   ];
 
   return (
@@ -319,22 +391,21 @@ const Profile: React.FC = () => {
       <Header />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button */}
+        {/* Breadcrumb Navigation */}
         <div className="mb-6">
-          <button
-            onClick={handleBackClick}
-            className="inline-flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Home</span>
-          </button>
+          <Breadcrumb 
+            items={[
+              { label: 'Home', path: '/' },
+              { label: 'Profile' }
+            ]}
+          />
         </div>
 
         {/* Profile Header */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border dark:border-gray-700 p-6 mb-8">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center space-y-6 lg:space-y-0 lg:space-x-6">
+          <div className="flex flex-col items-center space-y-6">
             {/* Profile Picture */}
-            <div className="relative flex-shrink-0 mx-auto lg:mx-0">
+            <div className="relative flex-shrink-0 mx-auto">
               <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center">
                 {user.profilePicture ? (
                   <img
@@ -360,7 +431,7 @@ const Profile: React.FC = () => {
               {user.profilePicture && (
                 <button
                   onClick={handleRemoveProfilePicture}
-                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full transition-colors"
+                  className="absolute -top-1 right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full transition-colors"
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
@@ -377,33 +448,49 @@ const Profile: React.FC = () => {
             {/* Profile Info */}
             <div className="flex-1 w-full">
               {isEditing ? (
-                <div>
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-lg animate-in slide-in-from-top-2 duration-300">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {editingField === 'name' && 'Edit Name'}
+                      {editingField === 'email' && 'Change Email'}
+                      {editingField === 'password' && 'Change Password'}
+                    </h3>
+                    <button
+                      onClick={handleCancel}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
                   {verificationStep === 'input' && (
                     <div className="space-y-4">
                       {editingField === 'name' && (
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Name
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Full Name
                           </label>
                           <input
                             type="text"
                             value={editName}
                             onChange={(e) => setEditName(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder="Enter your full name"
+                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
                           />
                         </div>
                       )}
                       
                       {editingField === 'email' && (
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Email
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Email Address
                           </label>
                           <input
                             type="email"
                             value={editEmail}
                             onChange={(e) => setEditEmail(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder="Enter your email address"
+                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
                           />
                         </div>
                       )}
@@ -411,46 +498,49 @@ const Profile: React.FC = () => {
                       {editingField === 'password' && (
                         <div className="space-y-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                               Current Password
                             </label>
                             <input
                               type="password"
                               value={currentPassword}
                               onChange={(e) => setCurrentPassword(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              placeholder="Enter your current password"
+                              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                               New Password
                             </label>
                             <input
                               type="password"
                               value={newPassword}
                               onChange={(e) => setNewPassword(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              placeholder="Enter your new password"
+                              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                               Confirm New Password
                             </label>
                             <input
                               type="password"
                               value={confirmPassword}
                               onChange={(e) => setConfirmPassword(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                              placeholder="Confirm your new password"
+                              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
                             />
                           </div>
                         </div>
                       )}
                       
-                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                      <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
                         <button
                           onClick={handleSave}
                           disabled={isSaving || isSendingCode}
-                          className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                          className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                         >
                           {(isSaving || isSendingCode) && (
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -464,7 +554,7 @@ const Profile: React.FC = () => {
                         <button
                           onClick={handleCancel}
                           disabled={isSaving || isSendingCode}
-                          className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                          className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
                         >
                           Cancel
                         </button>
@@ -544,8 +634,8 @@ const Profile: React.FC = () => {
                 </div>
               ) : (
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-4 text-center lg:text-left">
-                    <div className="flex items-center justify-center lg:justify-start space-x-2">
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-4 text-center">
+                    <div className="flex items-center justify-center space-x-2">
                       <span>{user.name}</span>
                       {user.isVerified ? (
                         <div className="flex items-center space-x-1">
@@ -560,7 +650,7 @@ const Profile: React.FC = () => {
                       )}
                     </div>
                   </h1>
-                  <div className="flex flex-col items-center lg:items-start space-y-2 text-gray-600 dark:text-gray-400 mb-6 text-center lg:text-left">
+                  <div className="flex flex-col items-center space-y-2 text-gray-600 dark:text-gray-400 mb-6 text-center">
                     <div className="flex items-center space-x-1">
                       <Mail className="w-4 h-4" />
                       <span>{user.email}</span>
@@ -600,42 +690,41 @@ const Profile: React.FC = () => {
                   
                   {/* Verified User Actions */}
                   {user.isVerified && (
-                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
-                      <div className="flex items-start space-x-3">
-                        <ShieldCheck className="w-5 h-5 text-green-500 mt-0.5" />
-                        <div className="flex-1">
-                          <h3 className="text-sm font-medium text-green-900 dark:text-green-100 mb-1">
-                            Verified Account
-                          </h3>
-                          <p className="text-sm text-green-700 dark:text-green-200 mb-3">
-                            You can now post your own recipes and write reviews for other recipes.
-                          </p>
-                          <div className="flex flex-col sm:flex-row gap-2">
-                            <button
-                              onClick={() => window.location.href = '/post-recipe'}
-                              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
-                            >
-                              <Plus className="w-4 h-4" />
-                              <span>Post Recipe</span>
-                            </button>
-                            <button
-                              onClick={() => window.location.href = '/search'}
-                              className="bg-white dark:bg-gray-700 border border-green-300 dark:border-green-600 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                            >
-                              Browse & Review
-                            </button>
-                          </div>
-                        </div>
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6 max-w-md mx-auto">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <ShieldCheck className="w-4 h-4 text-green-500" />
+                        <h3 className="text-sm font-medium text-green-900 dark:text-green-100">
+                          Verified Account
+                        </h3>
+                      </div>
+                      <p className="text-sm text-green-700 dark:text-green-200 mb-4">
+                        You can now post your own recipes and write reviews for other recipes.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <button
+                          onClick={() => window.location.href = '/post-recipe'}
+                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Post Recipe</span>
+                        </button>
+                        <button
+                          onClick={() => window.location.href = '/search'}
+                          className="bg-white dark:bg-gray-700 border border-green-300 dark:border-green-600 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          Browse & Review
+                        </button>
                       </div>
                     </div>
                   )}
                   
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <button
                       onClick={() => handleEditField('name')}
-                      className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
+                      className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors flex items-center space-x-2"
                     >
-                      Edit Name
+                      <User className="w-4 h-4" />
+                      <span>Edit Name</span>
                     </button>
                     <button
                       onClick={() => handleEditField('email')}
@@ -650,6 +739,13 @@ const Profile: React.FC = () => {
                     >
                       <Key className="w-4 h-4" />
                       <span>Change Password</span>
+                    </button>
+                    <button
+                      onClick={handleDeleteAccount}
+                      className="bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 px-4 py-2 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors flex items-center space-x-2 border border-red-200 dark:border-red-800"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete Account</span>
                     </button>
                   </div>
                 </div>
@@ -1070,6 +1166,109 @@ const Profile: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg max-w-md w-full animate-in slide-in-from-top-2 duration-300">
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      Delete Account
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      This action cannot be undone
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleDeleteAccountCancel}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Warning Message */}
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+                <div className="flex items-start space-x-3">
+                  <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-medium text-red-900 dark:text-red-100 mb-2">
+                      All your data will be permanently deleted
+                    </h4>
+                    <p className="text-sm text-red-700 dark:text-red-200 mb-3">
+                      This includes:
+                    </p>
+                    <ul className="text-sm text-red-700 dark:text-red-200 space-y-2">
+                      <li className="flex items-center space-x-2">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                        <span>All your saved recipes and favorites</span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                        <span>Your search history and reviews</span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                        <span>Your profile information and settings</span>
+                      </li>
+                      <li className="flex items-center space-x-2">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                        <span>Any posted recipes and contributions</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Email Confirmation */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Type your email to confirm deletion
+                </label>
+                <input
+                  type="email"
+                  value={deleteEmail}
+                  onChange={(e) => setDeleteEmail(e.target.value)}
+                  placeholder={user?.email}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
+                />
+                {deleteError && (
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-2">{deleteError}</p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                <button
+                  onClick={handleDeleteAccountConfirm}
+                  disabled={isDeletingAccount || deleteEmail !== user?.email}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  {isDeletingAccount && (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  )}
+                  <span>{isDeletingAccount ? 'Deleting Account...' : 'Delete Account'}</span>
+                </button>
+                <button
+                  onClick={handleDeleteAccountCancel}
+                  disabled={isDeletingAccount}
+                  className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
