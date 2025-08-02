@@ -27,6 +27,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionRef = useRef<HTMLDivElement>(null);
@@ -59,6 +60,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   const handleInputChange = (value: string) => {
     setQuery(value);
+    setSelectedIndex(-1);
     if (value.trim()) {
       const newSuggestions = getSearchSuggestions(value);
       setSuggestions(newSuggestions);
@@ -74,19 +76,58 @@ const SearchBar: React.FC<SearchBarProps> = ({
       onSearch(searchQuery.trim());
       setQuery(searchQuery.trim());
       setShowSuggestions(false);
+      setSelectedIndex(-1);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleSearch(query);
+    
+    // If a suggestion is selected, use it; otherwise use the current query
+    const allSuggestions = query.trim() ? suggestions : searchHistory.slice(0, 5);
+    if (selectedIndex >= 0 && selectedIndex < allSuggestions.length) {
+      handleSearch(allSuggestions[selectedIndex]);
+    } else {
+      handleSearch(query);
+    }
   };
 
   const handleSuggestionClick = (suggestion: string) => {
     handleSearch(suggestion);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions) return;
+
+    const allSuggestions = query.trim() ? suggestions : searchHistory.slice(0, 5);
+    
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev => 
+          prev < allSuggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        setSelectedIndex(-1);
+        inputRef.current?.blur();
+        break;
+      case 'Tab':
+        if (selectedIndex >= 0 && selectedIndex < allSuggestions.length) {
+          e.preventDefault();
+          setQuery(allSuggestions[selectedIndex]);
+          setSelectedIndex(-1);
+        }
+        break;
+    }
+  };
   const handleFocus = () => {
+    setSelectedIndex(-1);
     if (query.trim()) {
       const newSuggestions = getSearchSuggestions(query);
       setSuggestions(newSuggestions);
@@ -98,6 +139,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     setQuery('');
     setSuggestions([]);
     setShowSuggestions(false);
+    setSelectedIndex(-1);
     inputRef.current?.focus();
   };
 
@@ -128,6 +170,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
             onFocus={handleFocus}
+            onKeyDown={handleKeyDown}
             placeholder={large ? (window.innerWidth < 640 ? "Search..." : placeholder) : placeholder}
             className={`${baseInputClasses} bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400`}
           />
@@ -201,19 +244,22 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
       {/* Suggestions Dropdown */}
       {showSuggestions && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-10 max-h-80 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-10 max-h-80 overflow-y-auto scrollbar-hide">
           {query.trim() && suggestions.length > 0 && (
             <div className="p-2">
-              <div className="text-xs font-medium text-gray-500 dark:text-gray-400 px-3 py-2">
-                Suggestions
-              </div>
               {suggestions.map((suggestion, index) => (
                 <button
                   key={index}
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-3"
+                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-3 ${
+                    selectedIndex === index
+                      ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-100'
+                      : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
                 >
-                  <Search className="w-4 h-4 text-gray-400" />
+                  <Search className={`w-4 h-4 ${
+                    selectedIndex === index ? 'text-orange-500' : 'text-gray-400'
+                  }`} />
                   <span className="text-gray-900 dark:text-white">{suggestion}</span>
                 </button>
               ))}
@@ -229,9 +275,15 @@ const SearchBar: React.FC<SearchBarProps> = ({
                 <button
                   key={index}
                   onClick={() => handleSuggestionClick(historyItem)}
-                  className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-3"
+                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center space-x-3 ${
+                    selectedIndex === index
+                      ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-100'
+                      : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
                 >
-                  <Clock className="w-4 h-4 text-gray-400" />
+                  <Clock className={`w-4 h-4 ${
+                    selectedIndex === index ? 'text-orange-500' : 'text-gray-400'
+                  }`} />
                   <span className="text-gray-900 dark:text-white">{historyItem}</span>
                 </button>
               ))}
