@@ -34,7 +34,10 @@ export const createUser = (name: string, email: string, password: string): User 
     createdAt: new Date().toISOString(),
     searchHistory: [],
     favoriteRecipes: [],
-    savedRecipes: []
+    savedRecipes: [],
+    isVerified: false,
+    postedRecipes: [],
+    reviews: []
   };
   
   users.push(newUser);

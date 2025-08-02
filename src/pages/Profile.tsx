@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Mail, Calendar, Camera, Trash2, History, Heart, Bookmark, ArrowLeft, Key, CheckCircle } from 'lucide-react';
+import { User, Mail, Calendar, Camera, Trash2, History, Heart, Bookmark, ArrowLeft, Key, CheckCircle, Shield, ShieldCheck, MessageSquare, BookOpen, Star, Plus } from 'lucide-react';
 import Header from '../components/Header';
 import RecipeCard from '../components/RecipeCard';
+import TabNavigation from '../components/TabNavigation';
 import { useAuth } from '../context/AuthContext';
 import { getRecipeById } from '../data/mockRecipes';
 
 const Profile: React.FC = () => {
-  const { user, updateProfile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'favorites' | 'saved' | 'history'>('overview');
+  const { user, updateProfile, requestVerification } = useAuth();
+  const [activeTab, setActiveTab] = useState<'overview' | 'favorites' | 'saved' | 'history' | 'reviews' | 'posted'>('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [editingField, setEditingField] = useState<'name' | 'email' | 'password' | null>(null);
   const [verificationStep, setVerificationStep] = useState<'input' | 'verify' | 'success'>('input');
@@ -17,6 +18,7 @@ const Profile: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isRequestingVerification, setIsRequestingVerification] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -26,11 +28,14 @@ const Profile: React.FC = () => {
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
   const [isLoadingSaved, setIsLoadingSaved] = useState(true);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+  const [isLoadingPosted, setIsLoadingPosted] = useState(true);
   const [isDeletingHistoryItem, setIsDeletingHistoryItem] = useState<number | null>(null);
   const [isClearingHistory, setIsClearingHistory] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [favoriteRecipes, setFavoriteRecipes] = useState<typeof import('../data/mockRecipes').mockRecipes>([]);
   const [savedRecipes, setSavedRecipes] = useState<typeof import('../data/mockRecipes').mockRecipes>([]);
+  const [postedRecipes, setPostedRecipes] = useState<typeof import('../data/mockRecipes').mockRecipes>([]);
 
 
 
@@ -81,6 +86,38 @@ const Profile: React.FC = () => {
     };
 
     loadHistory();
+  }, [user]);
+
+  // Simulate loading reviews
+  useEffect(() => {
+    const loadReviews = async () => {
+      if (!user) return;
+      
+      setIsLoadingReviews(true);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 900));
+      
+      setIsLoadingReviews(false);
+    };
+
+    loadReviews();
+  }, [user]);
+
+  // Simulate loading posted recipes
+  useEffect(() => {
+    const loadPosted = async () => {
+      if (!user) return;
+      
+      setIsLoadingPosted(true);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1100));
+      
+      const recipes = user.postedRecipes.map(id => getRecipeById(id)).filter(Boolean);
+      setPostedRecipes(recipes);
+      setIsLoadingPosted(false);
+    };
+
+    loadPosted();
   }, [user]);
   
   if (!user) {
@@ -257,11 +294,24 @@ const Profile: React.FC = () => {
     window.location.href = '/';
   };
 
+  const handleRequestVerification = async () => {
+    setIsRequestingVerification(true);
+    try {
+      await requestVerification();
+    } catch (error) {
+      console.error('Verification request failed:', error);
+    } finally {
+      setIsRequestingVerification(false);
+    }
+  };
+
   const tabs = [
     { id: 'overview', name: 'Overview', icon: User },
     { id: 'favorites', name: 'Favorites', icon: Heart, count: favoriteRecipes.length },
     { id: 'saved', name: 'Saved', icon: Bookmark, count: savedRecipes.length },
-    { id: 'history', name: 'Search History', icon: History, count: user.searchHistory.length }
+    { id: 'history', name: 'Search History', icon: History, count: user.searchHistory.length },
+    { id: 'reviews', name: 'Reviews', icon: MessageSquare, count: user.reviews?.length || 0 },
+    { id: 'posted', name: 'Posted Recipes', icon: BookOpen, count: user.postedRecipes?.length || 0 }
   ];
 
   return (
@@ -495,7 +545,20 @@ const Profile: React.FC = () => {
               ) : (
                 <div>
                   <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-4 text-center lg:text-left">
-                    {user.name}
+                    <div className="flex items-center justify-center lg:justify-start space-x-2">
+                      <span>{user.name}</span>
+                      {user.isVerified ? (
+                        <div className="flex items-center space-x-1">
+                          <ShieldCheck className="w-6 h-6 text-blue-500" />
+                          <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">Verified</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-1">
+                          <Shield className="w-6 h-6 text-gray-400" />
+                          <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">Unverified</span>
+                        </div>
+                      )}
+                    </div>
                   </h1>
                   <div className="flex flex-col items-center lg:items-start space-y-2 text-gray-600 dark:text-gray-400 mb-6 text-center lg:text-left">
                     <div className="flex items-center space-x-1">
@@ -507,6 +570,66 @@ const Profile: React.FC = () => {
                       <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
+                  
+                  {/* Verification Status Card */}
+                  {!user.isVerified && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                      <div className="flex items-start space-x-3">
+                        <Shield className="w-5 h-5 text-blue-500 mt-0.5" />
+                        <div className="flex-1">
+                          <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                            Get Verified
+                          </h3>
+                          <p className="text-sm text-blue-700 dark:text-blue-200 mb-3">
+                            Verify your account to post recipes and write reviews. Verified users get a badge and enhanced features.
+                          </p>
+                          <button
+                            onClick={handleRequestVerification}
+                            disabled={isRequestingVerification}
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                          >
+                            {isRequestingVerification && (
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            )}
+                            <span>{isRequestingVerification ? 'Processing...' : 'Get Verified'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Verified User Actions */}
+                  {user.isVerified && (
+                    <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
+                      <div className="flex items-start space-x-3">
+                        <ShieldCheck className="w-5 h-5 text-green-500 mt-0.5" />
+                        <div className="flex-1">
+                          <h3 className="text-sm font-medium text-green-900 dark:text-green-100 mb-1">
+                            Verified Account
+                          </h3>
+                          <p className="text-sm text-green-700 dark:text-green-200 mb-3">
+                            You can now post your own recipes and write reviews for other recipes.
+                          </p>
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <button
+                              onClick={() => window.location.href = '/post-recipe'}
+                              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
+                            >
+                              <Plus className="w-4 h-4" />
+                              <span>Post Recipe</span>
+                            </button>
+                            <button
+                              onClick={() => window.location.href = '/search'}
+                              className="bg-white dark:bg-gray-700 border border-green-300 dark:border-green-600 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                            >
+                              Browse & Review
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                     <button
                       onClick={() => handleEditField('name')}
@@ -537,36 +660,11 @@ const Profile: React.FC = () => {
 
         {/* Tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border dark:border-gray-700 overflow-hidden">
-          <div className="border-b dark:border-gray-700">
-            <nav className="flex flex-wrap gap-2 sm:gap-8 px-4 sm:px-6">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={`flex items-center space-x-2 py-4 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
-                      activeTab === tab.id
-                        ? 'border-orange-500 text-orange-600 dark:text-orange-400'
-                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{tab.name}</span>
-                    {tab.count !== undefined && (
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        activeTab === tab.id
-                          ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-400'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                      }`}>
-                        {tab.count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
+          <TabNavigation
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={(tabId) => setActiveTab(tabId as any)}
+          />
 
           <div className="p-6">
             {activeTab === 'overview' && (
@@ -595,6 +693,33 @@ const Profile: React.FC = () => {
                     <div>
                       <p className="text-green-100">Searches</p>
                       <p className="text-2xl font-bold">{user.searchHistory.length}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white">
+                  <div className="flex flex-col sm:flex-row items-center sm:space-x-3 space-y-2 sm:space-y-0 text-center sm:text-left">
+                    <MessageSquare className="w-8 h-8" />
+                    <div>
+                      <p className="text-purple-100">Reviews</p>
+                      <p className="text-2xl font-bold">{user.reviews?.length || 0}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl p-6 text-white">
+                  <div className="flex flex-col sm:flex-row items-center sm:space-x-3 space-y-2 sm:space-y-0 text-center sm:text-left">
+                    <BookOpen className="w-8 h-8" />
+                    <div>
+                      <p className="text-yellow-100">Posted Recipes</p>
+                      <p className="text-2xl font-bold">{user.postedRecipes?.length || 0}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-indigo-500 to-blue-500 rounded-xl p-6 text-white">
+                  <div className="flex flex-col sm:flex-row items-center sm:space-x-3 space-y-2 sm:space-y-0 text-center sm:text-left">
+                    <ShieldCheck className="w-8 h-8" />
+                    <div>
+                      <p className="text-indigo-100">Status</p>
+                      <p className="text-2xl font-bold">{user.isVerified ? 'Verified' : 'Unverified'}</p>
                     </div>
                   </div>
                 </div>
@@ -769,6 +894,175 @@ const Profile: React.FC = () => {
                     >
                       Start Searching
                     </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'reviews' && (
+              <div>
+                {isLoadingReviews ? (
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, index) => (
+                      <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 animate-pulse">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded mb-2"></div>
+                            <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded mb-2 w-3/4"></div>
+                            <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : user && user.reviews && user.reviews.length > 0 ? (
+                  <div className="space-y-4">
+                    {user.reviews.map((review) => (
+                      <div key={review.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+                            <BookOpen className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h4 className="font-medium text-gray-900 dark:text-white">
+                                {review.recipeName}
+                              </h4>
+                              <div className="flex items-center">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star
+                                    key={star}
+                                    className={`w-4 h-4 ${
+                                      star <= review.rating
+                                        ? 'text-yellow-400 fill-current'
+                                        : 'text-gray-300 dark:text-gray-600'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">
+                                {new Date(review.date).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-gray-700 dark:text-gray-300 text-sm">
+                              {review.comment}
+                            </p>
+                            <button
+                              onClick={() => window.location.href = `/recipe/${review.recipeId}`}
+                              className="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 text-sm font-medium mt-2"
+                            >
+                              View Recipe →
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <MessageSquare className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      No reviews yet
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      {user.isVerified 
+                        ? "Start reviewing recipes you've tried"
+                        : "Get verified to write reviews"
+                      }
+                    </p>
+                    {user.isVerified ? (
+                      <button
+                        onClick={() => window.location.href = '/search'}
+                        className="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium"
+                      >
+                        Browse Recipes
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleRequestVerification}
+                        disabled={isRequestingVerification}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                      >
+                        {isRequestingVerification ? 'Processing...' : 'Get Verified'}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'posted' && (
+              <div>
+                {isLoadingPosted ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(3)].map((_, index) => (
+                      <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 animate-pulse">
+                        <div className="w-full h-48 bg-gray-300 dark:bg-gray-600 rounded-t-xl"></div>
+                        <div className="p-4">
+                          <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded mb-2"></div>
+                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded mb-3"></div>
+                          <div className="flex justify-between">
+                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : postedRecipes.length > 0 ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-6">
+                      <h4 className="font-medium text-gray-900 dark:text-white">Your Posted Recipes</h4>
+                      {user.isVerified && (
+                        <button
+                          onClick={() => window.location.href = '/post-recipe'}
+                          className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium flex items-center space-x-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Post New Recipe</span>
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {postedRecipes.map((recipe) => (
+                        <RecipeCard
+                          key={recipe.id}
+                          recipe={recipe}
+                          onClick={() => handleRecipeClick(recipe.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <BookOpen className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      No posted recipes yet
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      {user.isVerified 
+                        ? "Share your favorite recipes with the community"
+                        : "Get verified to post your own recipes"
+                      }
+                    </p>
+                    {user.isVerified ? (
+                      <button
+                        onClick={() => window.location.href = '/post-recipe'}
+                        className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium flex items-center space-x-2 mx-auto"
+                      >
+                        <Plus className="w-5 h-5" />
+                        <span>Post Your First Recipe</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleRequestVerification}
+                        disabled={isRequestingVerification}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
+                      >
+                        {isRequestingVerification ? 'Processing...' : 'Get Verified'}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

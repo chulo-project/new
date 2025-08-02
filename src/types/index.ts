@@ -7,6 +7,18 @@ export interface User {
   searchHistory: string[];
   favoriteRecipes: string[];
   savedRecipes: string[];
+  isVerified: boolean;
+  postedRecipes: string[];
+  reviews: UserReview[];
+}
+
+export interface UserReview {
+  id: string;
+  recipeId: string;
+  recipeName: string;
+  rating: number;
+  comment: string;
+  date: string;
 }
 
 export interface Recipe {
@@ -46,6 +58,7 @@ export interface AuthContextType {
   removeFromSaved: (recipeId: string) => void;
   addToSearchHistory: (query: string) => void;
   resetPassword: (email: string) => Promise<boolean>;
+  requestVerification: () => Promise<boolean>;
 }
 
 export interface ThemeContextType {

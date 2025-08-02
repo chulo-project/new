@@ -133,6 +133,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return !!foundUser;
   };
 
+  const requestVerification = async (): Promise<boolean> => {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    if (user) {
+      const updatedUser = { ...user, isVerified: true };
+      setUser(updatedUser);
+      updateUser(updatedUser);
+      return true;
+    }
+    return false;
+  };
   const value: AuthContextType = {
     user,
     login,
@@ -144,7 +156,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     addToSaved,
     removeFromSaved,
     addToSearchHistory,
-    resetPassword
+    resetPassword,
+    requestVerification
   };
 
   return (
