@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Clock, X } from 'lucide-react';
+import { Search, Clock, X, Filter, Camera } from 'lucide-react';
 import { getSearchSuggestions } from '../data/mockRecipes';
 import { useAuth } from '../context/AuthContext';
 
@@ -8,18 +8,25 @@ interface SearchBarProps {
   placeholder?: string;
   className?: string;
   large?: boolean;
+  onAdvancedSearchToggle?: () => void;
+  onImageSearch?: () => void;
+  showAdvancedSearch?: boolean;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ 
   onSearch, 
   placeholder = "Search for recipes...", 
   className = "",
-  large = false 
+  large = false,
+  onAdvancedSearchToggle,
+  onImageSearch,
+  showAdvancedSearch = false
 }) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const { user } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionRef = useRef<HTMLDivElement>(null);
@@ -29,6 +36,15 @@ const SearchBar: React.FC<SearchBarProps> = ({
       setSearchHistory(user.searchHistory);
     }
   }, [user]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -85,9 +101,21 @@ const SearchBar: React.FC<SearchBarProps> = ({
     inputRef.current?.focus();
   };
 
+  const handleAdvancedSearchClick = () => {
+    if (onAdvancedSearchToggle) {
+      onAdvancedSearchToggle();
+    }
+  };
+
+  const handleImageSearchClick = () => {
+    if (onImageSearch) {
+      onImageSearch();
+    }
+  };
+
   const baseInputClasses = large 
-    ? "w-full pl-12 pr-12 py-4 text-lg rounded-2xl"
-    : "w-full pl-10 pr-10 py-3 rounded-xl";
+    ? "w-full pl-12 pr-32 py-4 text-lg rounded-2xl"
+    : "w-full pl-10 pr-20 py-3 rounded-xl";
 
   return (
     <div className={`relative ${className}`} ref={suggestionRef}>
@@ -103,15 +131,71 @@ const SearchBar: React.FC<SearchBarProps> = ({
             placeholder={large ? (window.innerWidth < 640 ? "Search..." : placeholder) : placeholder}
             className={`${baseInputClasses} bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400`}
           />
-          {query && (
-            <button
-              type="button"
-              onClick={clearSearch}
-              className={`absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors`}
-            >
-              <X className={`${large ? 'w-6 h-6' : 'w-5 h-5'}`} />
-            </button>
-          )}
+          
+          {/* Right side icons container */}
+          <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center space-x-2`}>
+            {query && (
+              <>
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className={`text-gray-400 hover:text-orange-500 transition-colors`}
+                >
+                  <X className={`${large ? 'w-5 h-5' : 'w-4 h-4'}`} />
+                </button>
+                
+                {/* Vertical separator */}
+                <div className="w-px h-5 bg-gray-300 dark:bg-gray-600" />
+                
+                {/* Desktop: Filter + Camera icons */}
+                {!isMobile && large && (
+                  <button
+                    type="button"
+                    onClick={handleAdvancedSearchClick}
+                    className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+                    title="Advanced Search"
+                  >
+                    <Filter className="w-5 h-5" />
+                  </button>
+                )}
+                
+                {/* Camera icon for all widths */}
+                <button
+                  type="button"
+                  onClick={handleImageSearchClick}
+                  className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+                  title="Image Search"
+                >
+                  <Camera className={`${large ? 'w-5 h-5' : 'w-4 h-4'}`} />
+                </button>
+              </>
+            )}
+            
+            {/* Show icons even when no query on large screens */}
+            {!query && large && (
+              <>
+                {!isMobile && (
+                  <button
+                    type="button"
+                    onClick={handleAdvancedSearchClick}
+                    className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+                    title="Advanced Search"
+                  >
+                    <Filter className="w-5 h-5" />
+                  </button>
+                )}
+                
+                <button
+                  type="button"
+                  onClick={handleImageSearchClick}
+                  className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+                  title="Image Search"
+                >
+                  <Camera className="w-5 h-5" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </form>
 

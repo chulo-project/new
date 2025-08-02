@@ -131,25 +131,10 @@ const Home: React.FC = () => {
                 onSearch={handleSearch} 
                 large={true}
                 placeholder={isMobile ? "Search..." : "Search by ingredients, recipe name, cuisine..."}
+                onAdvancedSearchToggle={() => setShowAdvancedSearch(!showAdvancedSearch)}
+                onImageSearch={handleImageSearch}
+                showAdvancedSearch={showAdvancedSearch}
               />
-              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-                {!isMobile && (
-                  <button
-                    onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
-                    className="p-2 text-gray-400 hover:text-orange-500 transition-colors"
-                    title="Advanced Search"
-                  >
-                    <Filter className="w-5 h-5" />
-                  </button>
-                )}
-                <button
-                  onClick={handleImageSearch}
-                  className="p-2 text-gray-400 hover:text-orange-500 transition-colors"
-                  title="Image Search"
-                >
-                  <Camera className="w-5 h-5" />
-                </button>
-              </div>
             </div>
 
             {/* Search Buttons Container */}
