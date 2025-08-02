@@ -3,25 +3,39 @@ import { Clock, Filter, SortDesc, ArrowLeft } from 'lucide-react';
 import Header from '../components/Header';
 import SearchBar from '../components/SearchBar';
 import RecipeCard from '../components/RecipeCard';
-import { searchRecipes, getRecipeById } from '../data/mockRecipes';
+import { searchRecipes, getRecipeById, mockRecipes } from '../data/mockRecipes';
 import { useAuth } from '../context/AuthContext';
 import { Recipe } from '../types';
 
 const SearchResults: React.FC = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [query, setQuery] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState({
+    cuisine: '',
+    difficulty: '',
+    dietary: ''
+  });
   const [searchTime, setSearchTime] = useState(0);
   const [totalResults, setTotalResults] = useState(0);
   const [sortBy, setSortBy] = useState<'relevance' | 'rating' | 'time' | 'calories'>('relevance');
   const [filterBy, setFilterBy] = useState<'all' | 'easy' | 'medium' | 'hard'>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [isImageSearch, setIsImageSearch] = useState(false);
   const { user, addToSearchHistory } = useAuth();
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const searchQuery = urlParams.get('q') || '';
+    const cuisine = urlParams.get('cuisine') || '';
+    const difficulty = urlParams.get('difficulty') || '';
+    const dietary = urlParams.get('dietary') || '';
+    const searchType = urlParams.get('type') || '';
     const favorites = urlParams.get('favorites') === 'true';
     const saved = urlParams.get('saved') === 'true';
+
+    // Set applied filters
+    setAppliedFilters({ cuisine, difficulty, dietary });
+    setIsImageSearch(searchType === 'image');
 
     if (favorites && user) {
       const favoriteRecipes = user.favoriteRecipes.map(id => getRecipeById(id)).filter(Boolean) as Recipe[];
@@ -36,7 +50,7 @@ const SearchResults: React.FC = () => {
       setTotalResults(savedRecipes.length);
       setSearchTime(0);
     } else if (searchQuery) {
-      performSearch(searchQuery);
+      performSearch(searchQuery, cuisine, difficulty, dietary);
     } else {
       // Show all recipes if no query
       setRecipes([]);
@@ -46,9 +60,22 @@ const SearchResults: React.FC = () => {
     }
   }, [user]);
 
-  const performSearch = (searchQuery: string) => {
+  const performSearch = (searchQuery: string, cuisine?: string, difficulty?: string, dietary?: string) => {
     const startTime = performance.now();
-    const results = searchRecipes(searchQuery);
+    
+    // Handle special image search case
+    if (searchQuery === 'image_search_results') {
+      // For demo purposes, return some sample recipes for image search
+      const imageSearchResults = mockRecipes.slice(0, 4);
+      setRecipes(imageSearchResults);
+      setQuery('Image Search Results');
+      setTotalResults(imageSearchResults.length);
+      const endTime = performance.now();
+      setSearchTime((endTime - startTime) / 1000);
+      return;
+    }
+    
+    const results = searchRecipes(searchQuery, cuisine, difficulty, dietary);
     const endTime = performance.now();
     
     setRecipes(results);
@@ -64,8 +91,12 @@ const SearchResults: React.FC = () => {
   const handleSearch = (newQuery: string) => {
     const url = new URL(window.location.href);
     url.searchParams.set('q', newQuery);
+    // Preserve existing filters when doing a new search
+    if (appliedFilters.cuisine) url.searchParams.set('cuisine', appliedFilters.cuisine);
+    if (appliedFilters.difficulty) url.searchParams.set('difficulty', appliedFilters.difficulty);
+    if (appliedFilters.dietary) url.searchParams.set('dietary', appliedFilters.dietary);
     window.history.pushState({}, '', url.toString());
-    performSearch(newQuery);
+    performSearch(newQuery, appliedFilters.cuisine, appliedFilters.difficulty, appliedFilters.dietary);
   };
 
   const handleRecipeClick = (recipeId: string) => {
@@ -107,8 +138,13 @@ const SearchResults: React.FC = () => {
 
     if (favorites) return 'Your Favorite Recipes';
     if (saved) return 'Your Saved Recipes';
+    if (isImageSearch) return 'Image Search Results';
     if (query) return `Search Results for "${query}"`;
     return 'Search Recipes';
+  };
+
+  const getActiveFiltersCount = () => {
+    return Object.values(appliedFilters).filter(filter => filter && filter !== '').length;
   };
 
   return (
@@ -135,6 +171,46 @@ const SearchResults: React.FC = () => {
           />
         </div>
 
+        {/* Applied Filters Display */}
+        {getActiveFiltersCount() > 0 && (
+          <div className="mb-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Active filters:</span>
+              {appliedFilters.cuisine && (
+                <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-full text-sm">
+                  Cuisine: {appliedFilters.cuisine}
+                </span>
+              )}
+              {appliedFilters.difficulty && (
+                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+                  Difficulty: {appliedFilters.difficulty}
+                </span>
+              )}
+              {appliedFilters.dietary && (
+                <span className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm">
+                  Diet: {appliedFilters.dietary}
+                </span>
+              )}
+              <button
+                onClick={() => window.location.href = '/search'}
+                className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                Clear all
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Special message for image search */}
+        {isImageSearch && (
+          <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <p className="text-blue-800 dark:text-blue-200 text-center">
+              <strong>Image Search Demo:</strong> This feature simulates image-based recipe search. 
+              In a real application, this would analyze uploaded images to find similar recipes.
+            </p>
+          </div>
+        )}
+
         {/* Results Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
           <div>
@@ -159,7 +235,7 @@ const SearchResults: React.FC = () => {
               className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               <Filter className="w-4 h-4" />
-              <span>Filters</span>
+              <span>Filters {getActiveFiltersCount() > 0 && `(${getActiveFiltersCount()})`}</span>
             </button>
 
             <select

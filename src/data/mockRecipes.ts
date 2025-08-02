@@ -135,9 +135,14 @@ export const getRecipeById = (id: string): Recipe | undefined => {
   return mockRecipes.find(recipe => recipe.id === id);
 };
 
-export const searchRecipes = (query: string): Recipe[] => {
+export const searchRecipes = (
+  query: string, 
+  cuisine?: string, 
+  difficulty?: string, 
+  dietary?: string
+): Recipe[] => {
   const lowercaseQuery = query.toLowerCase();
-  return mockRecipes.filter(recipe => 
+  let filteredRecipes = mockRecipes.filter(recipe => 
     recipe.title.toLowerCase().includes(lowercaseQuery) ||
     recipe.description.toLowerCase().includes(lowercaseQuery) ||
     recipe.cuisine.toLowerCase().includes(lowercaseQuery) ||
@@ -145,6 +150,29 @@ export const searchRecipes = (query: string): Recipe[] => {
     recipe.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery)) ||
     recipe.ingredients.some(ingredient => ingredient.toLowerCase().includes(lowercaseQuery))
   );
+  
+  // Apply cuisine filter
+  if (cuisine && cuisine !== '' && cuisine !== 'any') {
+    filteredRecipes = filteredRecipes.filter(recipe => 
+      recipe.cuisine.toLowerCase() === cuisine.toLowerCase()
+    );
+  }
+  
+  // Apply difficulty filter
+  if (difficulty && difficulty !== '' && difficulty !== 'any') {
+    filteredRecipes = filteredRecipes.filter(recipe => 
+      recipe.difficulty.toLowerCase() === difficulty.toLowerCase()
+    );
+  }
+  
+  // Apply dietary filter
+  if (dietary && dietary !== '' && dietary !== 'any') {
+    filteredRecipes = filteredRecipes.filter(recipe => 
+      recipe.tags.some(tag => tag.toLowerCase().includes(dietary.toLowerCase()))
+    );
+  }
+  
+  return filteredRecipes;
 };
 
 export const getSearchSuggestions = (query: string): string[] => {

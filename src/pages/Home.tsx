@@ -16,6 +16,12 @@ const Home: React.FC = () => {
   const { user, addToSearchHistory } = useAuth();
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+  const [selectedCuisine, setSelectedCuisine] = useState('');
+  const [selectedDifficulty, setSelectedDifficulty] = useState('');
+  const [selectedDietary, setSelectedDietary] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [isLuckySearching, setIsLuckySearching] = useState(false);
+  const [isImageSearching, setIsImageSearching] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -27,18 +33,71 @@ const Home: React.FC = () => {
   }, []);
 
   // Event handlers
-  const handleSearch = (query: string) => {
-    addToSearchHistory(query);
-    window.location.href = `/search?q=${encodeURIComponent(query)}`;
+  const handleSearch = async (query: string) => {
+    setIsSearching(true);
+    
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      if (query.trim()) {
+        addToSearchHistory(query);
+      }
+      
+      // Build URL with filters
+      const params = new URLSearchParams();
+      if (query.trim()) {
+        params.set('q', query.trim());
+      }
+      if (selectedCuisine && selectedCuisine !== '') {
+        params.set('cuisine', selectedCuisine);
+      }
+      if (selectedDifficulty && selectedDifficulty !== '') {
+        params.set('difficulty', selectedDifficulty);
+      }
+      if (selectedDietary && selectedDietary !== '') {
+        params.set('dietary', selectedDietary);
+      }
+      
+      const searchUrl = params.toString() ? `/search?${params.toString()}` : '/search';
+      window.location.href = searchUrl;
+    } catch (error) {
+      console.error('Search failed:', error);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
-  const handleLuckySearch = () => {
-    const randomRecipe = mockRecipes[Math.floor(Math.random() * mockRecipes.length)];
-    window.location.href = `/recipe/${randomRecipe.id}`;
+  const handleLuckySearch = async () => {
+    setIsLuckySearching(true);
+    
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const randomRecipe = mockRecipes[Math.floor(Math.random() * mockRecipes.length)];
+      window.location.href = `/recipe/${randomRecipe.id}`;
+    } catch (error) {
+      console.error('Lucky search failed:', error);
+    } finally {
+      setIsLuckySearching(false);
+    }
   };
 
-  const handleImageSearch = () => {
-    alert('Image search feature coming soon! Upload a photo of ingredients or a dish to find similar recipes.');
+  const handleImageSearch = async () => {
+    setIsImageSearching(true);
+    
+    try {
+      // Simulate API call delay for image processing
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Navigate to search results with image search indicator
+      window.location.href = '/search?q=image_search_results&type=image';
+    } catch (error) {
+      console.error('Image search failed:', error);
+    } finally {
+      setIsImageSearching(false);
+    }
   };
 
   const handleRecipeClick = (recipeId: string) => {
@@ -56,6 +115,8 @@ const Home: React.FC = () => {
   const ADVANCED_SEARCH_FIELDS = [
     {
       label: 'Cuisine Type',
+      value: selectedCuisine,
+      onChange: setSelectedCuisine,
       options: [
         { value: '', label: 'Any Cuisine' },
         { value: 'italian', label: 'Italian' },
@@ -68,6 +129,8 @@ const Home: React.FC = () => {
     },
     {
       label: 'Difficulty',
+      value: selectedDifficulty,
+      onChange: setSelectedDifficulty,
       options: [
         { value: '', label: 'Any Difficulty' },
         { value: 'easy', label: 'Easy' },
@@ -77,6 +140,8 @@ const Home: React.FC = () => {
     },
     {
       label: 'Dietary Preferences',
+      value: selectedDietary,
+      onChange: setSelectedDietary,
       options: [
         { value: '', label: 'Any Diet' },
         { value: 'vegetarian', label: 'Vegetarian' },
@@ -155,17 +220,19 @@ const Home: React.FC = () => {
               {/* Search Buttons */}
               <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4">
                 <div className="hidden sm:block">
-                <SearchButton
-                  onClick={() => handleSearch('')}
-                  icon={Search}
-                  text="Search Recipes"
-                />
+                  <SearchButton
+                    onClick={() => handleSearch('')}
+                    icon={Search}
+                    text={isSearching ? "Searching..." : "Search Recipes"}
+                    disabled={isSearching}
+                  />
                 </div>
                 <SearchButton
                   onClick={handleLuckySearch}
                   icon={Shuffle}
-                  text="I'm Feeling Lucky"
+                  text={isLuckySearching ? "Finding Recipe..." : "I'm Feeling Lucky"}
                   variant="primary"
+                  disabled={isLuckySearching}
                 />
               </div>
             </div>
@@ -203,11 +270,12 @@ const Home: React.FC = () => {
                       <button
                         onClick={() => {
                           setShowAdvancedSearch(false);
-                          handleSearch('advanced');
+                          handleSearch('');
                         }}
-                        className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
+                        className="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium disabled:opacity-50"
+                        disabled={isSearching}
                       >
-                        Apply Filters
+                        {isSearching ? 'Applying...' : 'Apply Filters'}
                       </button>
                     </div>
                   </div>

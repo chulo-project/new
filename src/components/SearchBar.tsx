@@ -396,7 +396,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                 <button
                   type="button"
                   onClick={handleImageSearchClick}
-                  className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+                  className="p-1 text-gray-400 hover:text-orange-500 transition-colors disabled:opacity-50"
                   title="Image Search"
                 >
                   <Camera className={`${large ? 'w-5 h-5' : 'w-4 h-4'}`} />
@@ -421,7 +421,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                 <button
                   type="button"
                   onClick={handleImageSearchClick}
-                  className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+                  className="p-1 text-gray-400 hover:text-orange-500 transition-colors disabled:opacity-50"
                   title="Image Search"
                 >
                   <Camera className="w-5 h-5" />

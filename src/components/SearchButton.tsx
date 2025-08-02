@@ -7,6 +7,7 @@ interface SearchButtonProps {
   text: string;
   variant?: 'primary' | 'secondary';
   className?: string;
+  disabled?: boolean;
 }
 
 const SearchButton: React.FC<SearchButtonProps> = ({ 
@@ -14,9 +15,10 @@ const SearchButton: React.FC<SearchButtonProps> = ({
   icon: Icon, 
   text, 
   variant = 'secondary',
-  className = ''
+  className = '',
+  disabled = false
 }) => {
-  const baseClasses = "flex items-center space-x-2 px-6 py-3 rounded-xl transition-all duration-200 font-medium";
+  const baseClasses = "flex items-center space-x-2 px-6 py-3 rounded-xl transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed";
   const variantClasses = variant === 'primary' 
     ? "bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600"
     : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700";
@@ -24,6 +26,7 @@ const SearchButton: React.FC<SearchButtonProps> = ({
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={`${baseClasses} ${variantClasses} ${className}`}
     >
       <Icon className="w-4 h-4" />
