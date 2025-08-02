@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { User, Mail, Calendar, Camera, Trash2, History, Heart, Bookmark, ArrowLeft, Key, CheckCircle } from 'lucide-react';
 import Header from '../components/Header';
 import RecipeCard from '../components/RecipeCard';
@@ -15,14 +15,74 @@ const Profile: React.FC = () => {
   const [generatedCode, setGeneratedCode] = useState('');
   const [verificationError, setVerificationError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
+  const [isLoadingSaved, setIsLoadingSaved] = useState(true);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [isDeletingHistoryItem, setIsDeletingHistoryItem] = useState<number | null>(null);
+  const [isClearingHistory, setIsClearingHistory] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [favoriteRecipes, setFavoriteRecipes] = useState<typeof import('../data/mockRecipes').mockRecipes>([]);
+  const [savedRecipes, setSavedRecipes] = useState<typeof import('../data/mockRecipes').mockRecipes>([]);
 
+
+
+  // Simulate loading favorites
+  useEffect(() => {
+    const loadFavorites = async () => {
+      if (!user) return;
+      
+      setIsLoadingFavorites(true);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      
+      const recipes = user.favoriteRecipes.map(id => getRecipeById(id)).filter(Boolean);
+      setFavoriteRecipes(recipes);
+      setIsLoadingFavorites(false);
+    };
+
+    loadFavorites();
+  }, [user]);
+
+  // Simulate loading saved recipes
+  useEffect(() => {
+    const loadSaved = async () => {
+      if (!user) return;
+      
+      setIsLoadingSaved(true);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const recipes = user.savedRecipes.map(id => getRecipeById(id)).filter(Boolean);
+      setSavedRecipes(recipes);
+      setIsLoadingSaved(false);
+    };
+
+    loadSaved();
+  }, [user]);
+
+  // Simulate loading search history
+  useEffect(() => {
+    const loadHistory = async () => {
+      if (!user) return;
+      
+      setIsLoadingHistory(true);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      setIsLoadingHistory(false);
+    };
+
+    loadHistory();
+  }, [user]);
+  
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -47,14 +107,22 @@ const Profile: React.FC = () => {
   const handleSave = async () => {
     if (editingField === 'name') {
       // Name changes don't require verification
+      setIsSaving(true);
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 800));
       updateProfile({ name: editName });
+      setIsSaving(false);
       setIsEditing(false);
       setEditingField(null);
     } else if (editingField === 'email' || editingField === 'password') {
       // Email and password changes require verification
+      setIsSendingCode(true);
+      // Simulate API call delay for sending verification code
+      await new Promise(resolve => setTimeout(resolve, 1500));
       setVerificationStep('verify');
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       setGeneratedCode(code);
+      setIsSendingCode(false);
     }
   };
 
@@ -143,24 +211,42 @@ const Profile: React.FC = () => {
   };
 
   const deleteSearchHistoryItem = (index: number) => {
-    if (user) {
+    const deleteItem = async () => {
+      if (!user) return;
+      
+      setIsDeletingHistoryItem(index);
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const updatedHistory = user.searchHistory.filter((_, i) => i !== index);
       const updatedUser = {
         ...user,
         searchHistory: updatedHistory
       };
       updateProfile(updatedUser);
-    }
+      setIsDeletingHistoryItem(null);
+    };
+    
+    deleteItem();
   };
 
   const clearAllSearchHistory = () => {
-    if (user) {
+    const clearHistory = async () => {
+      if (!user) return;
+      
+      setIsClearingHistory(true);
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       const updatedUser = {
         ...user,
         searchHistory: []
       };
       updateProfile(updatedUser);
-    }
+      setIsClearingHistory(false);
+    };
+    
+    clearHistory();
   };
 
   const handleRecipeClick = (recipeId: string) => {
@@ -170,9 +256,6 @@ const Profile: React.FC = () => {
   const handleBackClick = () => {
     window.location.href = '/';
   };
-
-  const favoriteRecipes = user.favoriteRecipes.map(id => getRecipeById(id)).filter(Boolean);
-  const savedRecipes = user.savedRecipes.map(id => getRecipeById(id)).filter(Boolean);
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: User },
@@ -316,12 +399,21 @@ const Profile: React.FC = () => {
                       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                         <button
                           onClick={handleSave}
-                          className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium"
+                          disabled={isSaving || isSendingCode}
+                          className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                         >
-                          {editingField === 'name' ? 'Save Changes' : 'Continue'}
+                          {(isSaving || isSendingCode) && (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          )}
+                          <span>
+                            {isSaving ? 'Saving...' : 
+                             isSendingCode ? 'Sending Code...' : 
+                             editingField === 'name' ? 'Save Changes' : 'Continue'}
+                          </span>
                         </button>
                         <button
                           onClick={handleCancel}
+                          disabled={isSaving || isSendingCode}
                           className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
                         >
                           Cancel
@@ -511,7 +603,23 @@ const Profile: React.FC = () => {
 
             {activeTab === 'favorites' && (
               <div>
-                {favoriteRecipes.length > 0 ? (
+                {isLoadingFavorites ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(3)].map((_, index) => (
+                      <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 animate-pulse">
+                        <div className="w-full h-48 bg-gray-300 dark:bg-gray-600 rounded-t-xl"></div>
+                        <div className="p-4">
+                          <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded mb-2"></div>
+                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded mb-3"></div>
+                          <div className="flex justify-between">
+                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : favoriteRecipes.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {favoriteRecipes.map((recipe) => (
                       <RecipeCard
@@ -543,7 +651,23 @@ const Profile: React.FC = () => {
 
             {activeTab === 'saved' && (
               <div>
-                {savedRecipes.length > 0 ? (
+                {isLoadingSaved ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[...Array(3)].map((_, index) => (
+                      <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 animate-pulse">
+                        <div className="w-full h-48 bg-gray-300 dark:bg-gray-600 rounded-t-xl"></div>
+                        <div className="p-4">
+                          <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded mb-2"></div>
+                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded mb-3"></div>
+                          <div className="flex justify-between">
+                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : savedRecipes.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {savedRecipes.map((recipe) => (
                       <RecipeCard
@@ -575,15 +699,31 @@ const Profile: React.FC = () => {
 
             {activeTab === 'history' && (
               <div>
-                {user.searchHistory.length > 0 ? (
+                {isLoadingHistory ? (
+                  <div className="space-y-2">
+                    {[...Array(5)].map((_, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg animate-pulse">
+                        <div className="flex items-center space-x-3 flex-1">
+                          <div className="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32"></div>
+                        </div>
+                        <div className="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : user && user.searchHistory.length > 0 ? (
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="font-medium text-gray-900 dark:text-white">Recent Searches</h4>
                       <button
                         onClick={clearAllSearchHistory}
-                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium transition-colors"
+                        disabled={isClearingHistory}
+                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm font-medium transition-colors disabled:opacity-50 flex items-center space-x-1"
                       >
-                        Clear All
+                        {isClearingHistory && (
+                          <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                        )}
+                        <span>{isClearingHistory ? 'Clearing...' : 'Clear All'}</span>
                       </button>
                     </div>
                     <div className="space-y-2">
@@ -601,9 +741,14 @@ const Profile: React.FC = () => {
                           </div>
                           <button
                             onClick={() => deleteSearchHistoryItem(index)}
-                            className="opacity-0 group-hover:opacity-100 sm:opacity-100 text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200 p-1 self-end sm:self-center"
+                            disabled={isDeletingHistoryItem === index}
+                            className="opacity-0 group-hover:opacity-100 sm:opacity-100 text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-all duration-200 p-1 self-end sm:self-center disabled:opacity-50 flex items-center justify-center"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            {isDeletingHistoryItem === index ? (
+                              <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
                           </button>
                         </div>
                       ))}
